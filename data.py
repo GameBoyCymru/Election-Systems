@@ -124,19 +124,24 @@ with app.app_context():
         
         # Fetching party names and total votes for each party
         cur.execute("""
-            SELECT PARTY_TABLE.name, SUM(CANDIDATE_TABLE.votes)
-            FROM PARTY_TABLE
-            LEFT JOIN CANDIDATE_TABLE ON PARTY_TABLE.party_id = CANDIDATE_TABLE.party_id
-            GROUP BY PARTY_TABLE.party_id
+        SELECT PARTY_TABLE.name, SUM(CANDIDATE_TABLE.votes) as total_votes
+        FROM PARTY_TABLE
+        LEFT JOIN CANDIDATE_TABLE ON PARTY_TABLE.party_id = CANDIDATE_TABLE.party_id
+        GROUP BY PARTY_TABLE.party_id
+        ORDER BY total_votes DESC
         """)
     
         party_votes = cur.fetchall()
+        
+        # Calculating the total number of votes
+        total_votes_result = cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE").fetchone()
+        total_votes = total_votes_result[0] if total_votes_result else 0
     
         # Closing the cursor and connection
         cur.close()
         conn.close()
         
-        return render_template('index.html', party_votes=party_votes)
+        return render_template('index.html', party_votes=party_votes, total_votes=total_votes)
     
 
 
