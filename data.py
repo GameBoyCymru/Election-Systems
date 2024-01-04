@@ -119,37 +119,24 @@ with app.app_context():
         
         conn.commit()
         
-        
-        # Assuming you have a SELECT query to fetch candidate information
-        cur.execute("""
-            SELECT c.name as candidate_name, c.votes, p.name as party_name
-            FROM CANDIDATE_TABLE c
-            JOIN PARTY_TABLE p ON c.party_id = p.party_id
-        """)
-        
-        candidates_info = cur.fetchall()
-        
 
+        
+        
+        # Fetching party names and total votes for each party
+        cur.execute("""
+            SELECT PARTY_TABLE.name, SUM(CANDIDATE_TABLE.votes)
+            FROM PARTY_TABLE
+            LEFT JOIN CANDIDATE_TABLE ON PARTY_TABLE.party_id = CANDIDATE_TABLE.party_id
+            GROUP BY PARTY_TABLE.party_id
+        """)
+    
+        party_votes = cur.fetchall()
+    
         # Closing the cursor and connection
         cur.close()
         conn.close()
-    
-        # Generate HTML for the table
-        website_text = '<h1>Candidates Information</h1>'
-        website_text += '<table border="1">'
-        website_text += '<tr><th>Candidate Name</th><th>Votes</th><th>Party Name</th></tr>'
         
-        for candidate_info in candidates_info:
-            website_text += '<tr>'
-            website_text += f'<td>{candidate_info[0]}</td>'
-            website_text += f'<td>{candidate_info[1]}</td>'
-            website_text += f'<td>{candidate_info[2]}</td>'
-            website_text += '</tr>'
-        
-        website_text += '</table>'
-
-        
-        return website_text
+        return render_template('index.html', party_votes=party_votes)
     
 
 
