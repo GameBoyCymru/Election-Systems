@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Votes</title>
+</head>
+<body>
+    <h1>Party Votes</h1>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Party Name</th>
+                <th>Total Votes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for party, total_votes in party_votes %}
+                <tr>
+                    <td>{{ party }}</td>
+                    <td>{{ total_votes }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
