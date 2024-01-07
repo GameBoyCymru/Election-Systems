@@ -9,8 +9,11 @@
     <title>First Past the Post by Constituency</title>
 </head>
 <body>
-    <h1>First Past the Post by Constituency</h1>
-
+    <nav>
+        <h1>First past the post by Constituency</h1>
+        <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
+    </nav>
+    <main>
     <table border="1">
         <thead>
             <tr>
@@ -29,5 +32,6 @@
             {% endfor %}
         </tbody>
     </table>
+</main>
 </body>
 </html>
