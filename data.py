@@ -181,7 +181,40 @@ def first_past_the_post():
 
     return render_template('first_past_the_post.html', party_results=party_results)
 
-    
+
+# Route for the "Simple Proportional Representation" page
+@app.route('/simple_proportional_representation')
+def simple_proportional_representation():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+       # Get the overall total votes
+        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+        overall_total_votes = cur.fetchone()[0]
+
+       # SQL query to fetch party name and total votes for each constituency
+        cur.execute("""
+            SELECT
+                p.name AS party_name,
+                SUM(c.votes) AS total_votes,
+                CAST(ROUND((SUM(c.votes) * 1.0 / ?) * ?, 0) AS INTEGER) AS proportional_seats
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            GROUP BY
+                c.party_id
+            HAVING
+                proportional_seats >= 1
+            ORDER BY
+                proportional_seats DESC
+        """, (overall_total_votes, len(constituency_data)))
+        party_results = cur.fetchall()
+
+    return render_template('simple_proportional_representation.html', party_results=party_results)
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

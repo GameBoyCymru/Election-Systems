@@ -1,3 +1,4 @@
+<!-- simple_proportional_representation.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,12 +7,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <title>First Past the Post by Constituency</title>
+    <title>Simple Proportional Representation</title>
 </head>
 
 <body>
     <nav>
-        <h1>First past the post by Constituency</h1>
+        <h1>Simple Proportional Representation</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
     <main>
@@ -19,16 +20,16 @@
             <thead>
                 <tr>
                     <th>Party Name</th>
-                    <th>Votes</th>
-                    <th>Seats Won</th>
+                    <th>Total Votes</th>
+                    <th>Proportional Seats</th>
                 </tr>
             </thead>
             <tbody>
-                {% for party in parties %}
+                {% for party_name, total_votes, proportional_seats in party_results %}
                 <tr>
-                    <td>{{ party.name }}</td>
-                    <td>{{ party.votes }}</td>
-                    <td>{{ party.seats_won }}</td>
+                    <td>{{ party_name }}</td>
+                    <td>{{ total_votes }}</td>
+                    <td>{{ proportional_seats }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
