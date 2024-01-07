@@ -8,7 +8,7 @@ from myLists import constituency_data
 from myLists import party_data
 from myLists import gender_data
 
-app = Flask(__name__)
+app = Flask(__name__) 
 
 @app.route('/')
 def index():
@@ -45,11 +45,12 @@ def index():
                     sitting VARCHAR(8) NOT NULL,
                     votes INTEGER NOT NULL,
                     party_id INTEGER NOT NULL,
+                    constituency_id INTEGER NOT NULL,
                     FOREIGN KEY (gender_id) REFERENCES GENDER_TABLE(gender_id),
-                    FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id)
+                    FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id),
+                    FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id)
                 )""")
 
-    
     
     #drops table project if exists
     cur.execute("DROP TABLE IF EXISTS REGION_TABLE")
@@ -107,7 +108,7 @@ def index():
    
     
     cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?, ?)", gender_data)
-    cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id) VALUES (?, ?, ?, ?, ?, ?)", candidate_data)
+    cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id) VALUES (?, ?, ?, ?, ?, ?, ?)", candidate_data)
     cur.executemany("INSERT INTO PARTY_TABLE (party_id, name) VALUES (?, ?)", party_data)
     cur.executemany("INSERT INTO CONSTITUENCY_TABLE (constituency_id, name, county_id, type) VALUES (?, ?, ?, ?)", constituency_data)
     cur.executemany("INSERT INTO COUNTY_TABLE (county_id, name, region_id, country_id) VALUES (?, ?, ?, ?)", county_data)
@@ -138,6 +139,9 @@ def index():
 
     return render_template('index.html', menu_items=menu_items)
 
+# The route is the link to the webpage (html file)
+# Always begin with @app.route and it ends with a "return render_template......"
+
 
 # Route for the "First past the post by Constituency" page
 @app.route('/first_past_the_post')
@@ -145,17 +149,39 @@ def first_past_the_post():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
+ # SQL query to fetch party name, total votes, and seats won for each constituency
         cur.execute("""
-            SELECT p.name AS party_name, SUM(c.votes) AS total_votes, COUNT(c.candidate_id) AS seats_won
-            FROM CANDIDATE_TABLE c
-            JOIN PARTY_TABLE p ON c.party_id = p.party_id
-            GROUP BY p.party_id
-            ORDER BY total_votes DESC
+            SELECT
+                c.party_id,
+                p.name AS party_name,
+                SUM(c.votes) AS total_votes,
+                COUNT(DISTINCT c.constituency_id) AS seats_won
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            WHERE
+                (c.constituency_id, c.votes) = (
+                    SELECT
+                        constituency_id,
+                        MAX(votes)
+                    FROM
+                        CANDIDATE_TABLE
+                    WHERE
+                        constituency_id = c.constituency_id
+                    GROUP BY
+                        constituency_id
+                )
+            GROUP BY
+                c.party_id
+            ORDER BY
+                seats_won DESC
         """)
-        parties = [{'name': name, 'votes': votes, 'seats_won': seats_won} for name, votes, seats_won in cur.fetchall()]
+        party_results = cur.fetchall()
 
-    return render_template('first_past_the_post.html', parties=parties)
+    return render_template('first_past_the_post.html', party_results=party_results)
 
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

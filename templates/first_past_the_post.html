@@ -1,6 +1,6 @@
+<!-- first_past_the_post.html -->
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,32 +8,26 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <title>First Past the Post by Constituency</title>
 </head>
-
 <body>
-    <nav>
-        <h1>First past the post by Constituency</h1>
-        <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
-    </nav>
-    <main>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Party Name</th>
-                    <th>Votes</th>
-                    <th>Seats Won</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for party in parties %}
-                <tr>
-                    <td>{{ party.name }}</td>
-                    <td>{{ party.votes }}</td>
-                    <td>{{ party.seats_won }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </main>
-</body>
+    <h1>First Past the Post by Constituency</h1>
 
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Party Name</th>
+                <th>Total Votes</th>
+                <th>Seats Won</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for party_id, party_name, total_votes, seats_won in party_results %}
+                <tr>
+                    <td>{{ party_name }}</td>
+                    <td>{{ total_votes }}</td>
+                    <td>{{ seats_won }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
 </html>
