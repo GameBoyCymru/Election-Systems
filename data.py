@@ -11,7 +11,6 @@ from myLists import gender_data
 app = Flask(__name__) 
 
 
-
 conn = sqlite3.connect('database.db')
 cur = conn.cursor()
 
@@ -217,8 +216,23 @@ def first_past_the_post():
         # Extract the party with the most seats
         party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
             
-        return render_template('first_past_the_post.html', party_results=party_results, seats_results=seats_results, vote_percentages=vote_percentages, total_votes=total_votes, total_seats=total_seats, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
-                    
+        # Calculate the difference between the percentage of votes and the percentage of seats for each party
+        vote_seat_differences = {}
+        for party_name in vote_percentages.keys():
+            vote_percentage = vote_percentages[party_name]
+            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
+            difference = round(vote_percentage - seat_percentage, 2)
+            vote_seat_differences[party_name] = difference
+        
+        # Calculate the difference in seats from the winner's seats for each party
+        winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
+        seat_differences_from_winner = {}
+        for party_name in seats_results.keys():
+            party_seats = seats_results.get(party_name, 0)
+            difference = party_seats - winner_seats
+            seat_differences_from_winner[party_name] = difference
+        
+        return render_template('first_past_the_post.html', party_results=party_results, seats_results=seats_results, vote_percentages=vote_percentages, total_votes=total_votes, total_seats=total_seats, party_with_most_seats=party_with_most_seats, most_seats=most_seats, vote_seat_differences=vote_seat_differences, seat_differences_from_winner=seat_differences_from_winner)
 
 
 
