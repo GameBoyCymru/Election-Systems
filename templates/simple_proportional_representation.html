@@ -1,4 +1,4 @@
-<!-- simple_proportional_representation.html -->
+<!-- first_past_the_post.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,30 +11,77 @@
 </head>
 
 <body>
+
     <nav>
         <h1>Simple Proportional Representation</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
-    <main>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Party Name</th>
-                    <th>Total Votes</th>
-                    <th>Proportional Seats</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for party_name, total_votes, proportional_seats in party_results %}
-                <tr>
-                    <td>{{ party_name }}</td>
-                    <td>{{ total_votes }}</td>
-                    <td>{{ proportional_seats }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </main>
+    <h2>Total Votes: {{ total_votes }}</h2>
+    <h2>Total Seats: {{ total_seats }}</h2>
+
+    <h2>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Party Name</th>
+                <th>Votes</th>
+                <th>Seats Won</th>
+                <th>Percentage of the Seats</th>
+                <th>Percentage of the Votes</th>
+                <th>Difference Between Percentage Of Popular Votes And Percentage Of Seats</th>
+                <th>Seats Difference From Winner</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for party_name, total_votes in party_results %}
+            <tr>
+                <td>{{ party_name }}</td>
+                <td>{{ total_votes }}</td>
+                <td>
+                    {% for party, seats_won in seats_results.items() %}
+                    {% if party == party_name %}
+                    {{ seats_won }}
+                    {% endif %}
+                    {% endfor %}
+                </td>
+
+                <td>
+                    {% for party, seats in seats_results.items() %}
+                    {% if party == party_name %}
+                    {{ '%.2f'|format(seats / total_seats * 100) }}%
+                    {% endif %}
+                    {% endfor %}
+                </td>
+
+                <td>
+                    {% for party, votes_percentage in vote_percentages.items() %}
+                    {% if party == party_name %}
+                    {{ votes_percentage }}%
+                    {% endif %}
+                    {% endfor %}
+                </td>
+
+                <td>
+                    {% for party, difference in vote_seat_differences.items() %}
+                    {% if party == party_name %}
+                    {{ difference|abs }}%
+                    {% endif %}
+                    {% endfor %}
+                </td>
+
+                <td>
+                    {% for party, difference in seat_differences_from_winner.items() %}
+                        {% if party == party_name %}
+                            {{ difference|abs }}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 
 </html>
