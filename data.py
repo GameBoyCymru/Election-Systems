@@ -214,6 +214,61 @@ def simple_proportional_representation():
     return render_template('simple_proportional_representation.html', party_results=party_results)
 
 
+# Route for the "Proportional Representation with Threshold" page
+@app.route('/proportional_representation_with_threshold')
+def proportional_representation_with_threshold():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+        # Get the overall total votes
+        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+        overall_total_votes = cur.fetchone()[0]
+
+        # Calculate the threshold (5% of overall total votes)
+        threshold = 0.05 * overall_total_votes
+
+        # SQL query to fetch party name and total votes for each constituency
+        cur.execute("""
+            SELECT
+                p.name AS party_name,
+                SUM(c.votes) AS total_votes
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            GROUP BY
+                c.party_id
+        """)
+        all_parties = cur.fetchall()
+
+        # Identify parties that are disqualified due to the threshold
+        disqualified_parties = [party[0] for party in all_parties if party[1] < threshold]
+
+        # Deduct votes of disqualified parties from overall total votes
+        adjusted_total_votes = overall_total_votes - sum(party[1] for party in all_parties if party[0] in disqualified_parties)
+
+        # SQL query to fetch party_id, party_name, total_votes, and proportional seats based on the adjusted total votes
+        cur.execute("""
+            SELECT
+                c.party_id,
+                p.name AS party_name,
+                SUM(c.votes) AS total_votes,
+                CAST(ROUND((SUM(c.votes) * 1.0 / ?) * ?, 0) AS INTEGER) AS proportional_seats
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            GROUP BY
+                c.party_id
+            HAVING
+                party_name NOT IN ({})
+            ORDER BY
+                proportional_seats DESC
+        """.format(','.join('?' for _ in disqualified_parties)), (adjusted_total_votes, len(constituency_data), *disqualified_parties))
+        party_results = cur.fetchall()
+
+
+    return render_template('proportional_representation_with_threshold.html', party_results=party_results)
 
 
 if __name__ == '__main__':
