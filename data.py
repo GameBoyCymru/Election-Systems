@@ -149,12 +149,42 @@ def first_past_the_post():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
- # SQL query to fetch party name, total votes, and seats won for each constituency
+       # Calculate and display the total amount of votes
+        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+        total_votes = cur.fetchone()[0]
+        
+        # Calculate the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+        
+        # Fetch the party results
         cur.execute("""
             SELECT
-                c.party_id,
                 p.name AS party_name,
-                SUM(c.votes) AS total_votes,
+                SUM(c.votes) AS total_votes
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            GROUP BY
+                c.party_id
+        """)
+        party_results = cur.fetchall()
+        
+        # Calculate the percentage of votes for each party
+        vote_percentages = {}
+        for party_name, total_votes_party in party_results:
+            if total_votes_party:
+                vote_percentage = (total_votes_party / total_votes) * 100
+                vote_percentages[party_name] = round(vote_percentage, 2)
+            else:
+                vote_percentages[party_name] = 0
+
+        
+        # Calculate the number of seats each party has won
+        cur.execute("""
+            SELECT
+                p.name AS party_name,
                 COUNT(DISTINCT c.constituency_id) AS seats_won
             FROM
                 CANDIDATE_TABLE c
@@ -174,12 +204,22 @@ def first_past_the_post():
                 )
             GROUP BY
                 c.party_id
-            ORDER BY
-                seats_won DESC
         """)
-        party_results = cur.fetchall()
+        seats_results = dict(cur.fetchall())
+        
+        # Add parties without seats to the seats_results with default value 0
+        for party_name, _ in party_results:
+            seats_results.setdefault(party_name, 0)
+            
+        # Sort the seats_results dictionary by seats in descending order
+        sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
+        
+        # Extract the party with the most seats
+        party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
+            
+        return render_template('first_past_the_post.html', party_results=party_results, seats_results=seats_results, vote_percentages=vote_percentages, total_votes=total_votes, total_seats=total_seats, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
+                    
 
-    return render_template('first_past_the_post.html', party_results=party_results)
 
 
 # Route for the "Simple Proportional Representation" page
@@ -269,6 +309,7 @@ def proportional_representation_with_threshold():
 
 
     return render_template('proportional_representation_with_threshold.html', party_results=party_results)
+
 
 
 if __name__ == '__main__':

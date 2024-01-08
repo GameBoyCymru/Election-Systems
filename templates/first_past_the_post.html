@@ -9,29 +9,55 @@
     <title>First Past the Post by Constituency</title>
 </head>
 <body>
+
     <nav>
-        <h1>First past the post by Constituency</h1>
+        <h1>First Past the Post by Constituency</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
-    <main>
+    <h2>Total Votes: {{ total_votes }}</h2>
+    <h2>Total Seats: {{ total_seats }}</h2>
+
+    <h2>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</h2>
     <table border="1">
         <thead>
             <tr>
                 <th>Party Name</th>
                 <th>Total Votes</th>
                 <th>Seats Won</th>
+                <th>Percentage of Seats</th>
+                <th>Percentage of Votes</th>
             </tr>
         </thead>
         <tbody>
-            {% for party_id, party_name, total_votes, seats_won in party_results %}
+            {% for party_name, total_votes in party_results %}
                 <tr>
                     <td>{{ party_name }}</td>
                     <td>{{ total_votes }}</td>
-                    <td>{{ seats_won }}</td>
+                    <td>
+                        {% for party, seats in seats_results.items() %}
+                            {% if party == party_name %}
+                                {{ seats }}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    
+                    <td>
+                        {% for party, seats in seats_results.items() %}
+                            {% if party == party_name %}
+                                {{ '%.2f'|format(seats / total_seats * 100) }}%
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for party, votes_percentage in vote_percentages.items() %}
+                            {% if party == party_name %}
+                                {{ votes_percentage }}%
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
-</main>
 </body>
 </html>
