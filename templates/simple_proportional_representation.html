@@ -64,7 +64,7 @@
                 <td>
                     {% for party, difference in vote_seat_differences.items() %}
                     {% if party == party_name %}
-                    {{ difference|abs }}%
+                    {{ difference }}%
                     {% endif %}
                     {% endfor %}
                 </td>
