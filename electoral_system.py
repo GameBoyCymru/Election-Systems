@@ -167,7 +167,10 @@ cur.execute("""
         percentage_of_seats REAL,
         percentage_of_votes REAL,
         difference REAL,
-        is_different_from_winner TEXT
+        is_different_from_winner TEXT,
+        total_votes INTEGER,
+        party_with_most_seats TEXT,
+        total_seats INTEGER
     )
 """)
        
@@ -268,16 +271,15 @@ for party_name in seats_results.keys():
 
 # Insert the results into the database
 is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-for party_name in seats_results.keys():
+for party_name in seats_results.keys():            
     seats_won = seats_results[party_name]
     percentage_of_seats = (seats_won / total_seats) * 100
     percentage_of_votes = vote_percentages[party_name]
     difference = vote_seat_differences[party_name]
     cur.execute("""
-        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, ('First Past the Post', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
-    
+        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats))
 conn.commit()
 
 
@@ -354,15 +356,15 @@ for party_name in seats_results.keys():
     
 # Insert the results into the database
 is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-for party_name in seats_results.keys():
+for party_name in seats_results.keys():            
     seats_won = seats_results[party_name]
     percentage_of_seats = (seats_won / total_seats) * 100
     percentage_of_votes = vote_percentages[party_name]
     difference = vote_seat_differences[party_name]
     cur.execute("""
-        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
+        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats))
 conn.commit()
 
 
@@ -459,9 +461,9 @@ for party_name in seats_results.keys():
     percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
     difference = vote_seat_differences[party_name] if party_name not in disqualified_parties else 0
     cur.execute("""
-        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, ('Simple Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
+        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ('Simple Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, party_with_most_seats, total_seats))
 conn.commit()
 
 
@@ -469,14 +471,16 @@ conn.commit()
 def results():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
-        cur.execute("SELECT SUM(seats_won) as total_seats, SUM(percentage_of_votes) as total_votes FROM RESULTS_TABLE")
+        cur.execute("SELECT total_seats as total_seats, total_votes as total_votes FROM RESULTS_TABLE")
         total_seats, total_votes = cur.fetchone()
         cur.execute("SELECT * FROM RESULTS_TABLE")
         results = cur.fetchall()
         system_name = results[0][0] if results else None
         is_different_from_winner = results[0][-1] if results else None
-        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes)
-
+        party_with_most_seats = results[0][-1] if results else None
+        cur.execute("SELECT seats_won FROM RESULTS_TABLE WHERE party_name = ?", (party_with_most_seats,))
+        seats_for_winner = cur.fetchone()[0] if cur.fetchone() else None
+        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes, party_with_most_seats=party_with_most_seats, seats_for_winner=seats_for_winner)
 
 
 

@@ -21,7 +21,7 @@
         </section>
 
         <section class="stats">
-            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ( {{ most_seats }} Seats )</strong></p>
+            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ( {{ seats_for_winner }} Seats )</strong></p>
             <p><strong>Different from actual winner: {{ is_different_from_winner }}</strong></p>
         </section>
     </section>
@@ -41,9 +41,9 @@
 
             <td>{{ result[1] }}</td>
             <td>{{ result[2] }}</td>
-            <td>{{ '%.2f'|format(result[3]) }}</td>
-            <td>{{ '%.2f'|format(result[4]) }}</td>
-            <td>{{ '%.2f'|format(result[5]) }}</td>
+            <td>{{ '%.2f'|format(result[3]) }}%</td>
+            <td>{{ '%.2f'|format(result[4]) }}%</td>
+            <td>{{ '%.2f'|format(result[5]) }}%</td>
         </tr>
         {% endfor %}
     </table>
