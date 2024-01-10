@@ -173,11 +173,10 @@ cur.execute("""
         party_with_most_seats TEXT,
         most_seats INTEGER
     )
-""")
-       
-
+""") 
 conn.commit()
 
+# Start of First Past the Post
 
 # Calculate and display the total amount of votes
 cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
@@ -276,8 +275,193 @@ for party_name in sorted(seats_results.keys()):
     """, ('First Past the Post', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats))
 conn.commit()
 
+# End of First Past the Post
+
+# Start of Simple Proportional Representation
+
+# Calculate and display the total amount of votes
+cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+total_votes = cur.fetchone()[0]
+
+# Calculate the total number of seats
+cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+total_seats = cur.fetchone()[0]
+
+# Fetch the party results
+cur.execute("""
+    SELECT
+        p.name AS party_name,
+        SUM(c.votes) AS total_votes
+    FROM
+        CANDIDATE_TABLE c
+    JOIN
+        PARTY_TABLE p ON c.party_id = p.party_id
+    GROUP BY
+        c.party_id
+""")
+party_results = cur.fetchall()
+
+# Calculate the percentage of votes for each party
+vote_percentages = {}
+for party_name, total_votes_party in party_results:
+    if total_votes_party:
+        vote_percentage = (total_votes_party / total_votes) * 100
+        vote_percentages[party_name] = round(vote_percentage, 2)
+    else:
+        vote_percentages[party_name] = 0
+
+    # Calculate the number of seats each party has won based on the percentage of votes
+seats_results = {}
+for party_name, total_votes_party in party_results:
+    if total_votes_party > 0:
+        seat_count = int((total_votes_party / total_votes) * total_seats)
+        seats_results[party_name] = seat_count
+    else:
+        seats_results[party_name] = 0
+
+# Add parties without seats to the seats_results with default value 0
+for party_name, _ in party_results:
+    seats_results.setdefault(party_name, 0)
 
 
+
+# Sort the seats_results dictionary by seats in descending order
+sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
+
+# Extract the party with the most seats
+party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
+
+# Calculate the difference between the percentage of votes and the percentage of seats for each party
+vote_seat_differences = {}
+for party_name in vote_percentages.keys():
+    vote_percentage = vote_percentages[party_name]
+    seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
+    difference = round(vote_percentage - seat_percentage, 2)
+    vote_seat_differences[party_name] = difference
+
+# Calculate the difference in seats from the winner's seats for each party
+winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
+seat_differences_from_winner = {}
+for party_name in seats_results.keys():
+    party_seats = seats_results.get(party_name, 0)
+    difference = party_seats - winner_seats
+    seat_differences_from_winner[party_name] = difference
+    
+# Insert the results into the database
+is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+for party_name in sorted(seats_results.keys()):
+    seats_won = seats_results[party_name]
+    percentage_of_seats = (seats_won / total_seats) * 100
+    percentage_of_votes = vote_percentages[party_name]
+    difference = vote_seat_differences[party_name]
+    cur.execute("""
+        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats))
+conn.commit()
+
+# End of Simple Proportional Representation
+
+# Start of Simple Proportional Representation with Threshold
+
+# Calculate and display the total amount of votes
+cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+total_votes = cur.fetchone()[0]
+
+# Calculate the total number of seats
+cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+total_seats = cur.fetchone()[0]
+
+# Fetch the party results
+cur.execute("""
+    SELECT
+        p.name AS party_name,
+        SUM(c.votes) AS total_votes
+    FROM
+        CANDIDATE_TABLE c
+    JOIN
+        PARTY_TABLE p ON c.party_id = p.party_id
+    GROUP BY
+        c.party_id
+""")
+party_results = cur.fetchall()             
+        
+
+
+        # Calculate the number of seats each party has won based on the percentage of votes
+seats_results = {}
+disqualified_votes = 0  # To store the votes of disqualified parties
+disqualified_parties = []  # To store the names of disqualified parties
+
+# First, disqualify parties with less than 5% of the total votes
+for party_name, total_votes_party in party_results:
+    vote_percentage = (total_votes_party / total_votes) * 100
+
+    # If the party has less than 5% of the total votes, disqualify them
+    if vote_percentage < 5:
+        disqualified_votes += total_votes_party
+        disqualified_parties.append(party_name)
+
+# Then, calculate the seat count for the remaining parties
+for party_name, total_votes_party in party_results:
+    if party_name not in disqualified_parties:
+        # Use math.floor to round down to the nearest whole number
+        seat_count = math.floor((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
+        seats_results[party_name] = seat_count
+
+
+# Add parties without seats to the seats_results with default value 0
+for party_name, _ in party_results:
+    seats_results.setdefault(party_name, 0)
+    
+# Calculate the percentage of votes for each party
+vote_percentages = {}
+
+for party_name, total_votes_party in party_results:
+    if party_name not in disqualified_parties:
+        if total_votes_party:
+            vote_percentage = (total_votes_party / (total_votes - disqualified_votes)) * 100
+            vote_percentages[party_name] = round(vote_percentage, 2)
+        else:
+            vote_percentages[party_name] = 0.00
+
+# Sort the seats_results dictionary by seats in descending order
+sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
+
+# Extract the party with the most seats
+party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
+
+# Calculate the difference between the percentage of votes and the percentage of seats for each party
+vote_seat_differences = {}
+for party_name in vote_percentages.keys():
+    vote_percentage = vote_percentages[party_name]
+    seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
+    difference = round(vote_percentage - seat_percentage, 2)
+    vote_seat_differences[party_name] = difference
+
+# Calculate the difference in seats from the winner's seats for each party
+winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
+seat_differences_from_winner = {}
+for party_name in seats_results.keys():
+    party_seats = seats_results.get(party_name, 0)
+    difference = party_seats - winner_seats
+    seat_differences_from_winner[party_name] = difference
+    
+    
+# Insert the results into the database
+is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+for party_name in sorted(seats_results.keys()):
+    seats_won = seats_results[party_name]
+    percentage_of_seats = (seats_won / total_seats) * 100
+    percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
+    difference = vote_seat_differences[party_name] if party_name not in disqualified_parties else 0
+    cur.execute("""
+        INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ('Simple Proportional Representation with Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats))
+conn.commit()
+
+# End of Simple Proportional Representation with Threshold
 
 cur.close()
 conn.close()
@@ -305,294 +489,6 @@ def index():
     ]
 
     return render_template('index.html', menu_items=menu_items)
-
-
-@app.route('/first_past_the_post')
-def first_past_the_post():
-    with sqlite3.connect('database.db') as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT 
-                system_name, 
-                party_name, 
-                seats_won, 
-                percentage_of_seats, 
-                percentage_of_votes, 
-                difference, 
-                is_different_from_winner, 
-                total_votes, 
-                total_seats, 
-                party_with_most_seats, 
-                most_seats 
-            FROM RESULTS_TABLE
-            WHERE system_name = 'First Past The Post'
-        """)
-        results = cur.fetchall()
-        if results:
-            system_name, _, _, _, _, _, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats = results[0]
-        else:
-            system_name = is_different_from_winner = total_votes = total_seats = party_with_most_seats = most_seats = None
-        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Route for the "simple_proportional_representation" page
-@app.route('/simple_proportional_representation')
-def simple_proportional_representation():
-    with sqlite3.connect('database.db') as conn:
-        cur = conn.cursor()
-
-        # Calculate and display the total amount of votes
-        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
-        total_votes = cur.fetchone()[0]
-
-        # Calculate the total number of seats
-        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
-        total_seats = cur.fetchone()[0]
-
-        # Fetch the party results
-        cur.execute("""
-            SELECT
-                p.name AS party_name,
-                SUM(c.votes) AS total_votes
-            FROM
-                CANDIDATE_TABLE c
-            JOIN
-                PARTY_TABLE p ON c.party_id = p.party_id
-            GROUP BY
-                c.party_id
-        """)
-        party_results = cur.fetchall()
-
-        # Calculate the percentage of votes for each party
-        vote_percentages = {}
-        for party_name, total_votes_party in party_results:
-            if total_votes_party:
-                vote_percentage = (total_votes_party / total_votes) * 100
-                vote_percentages[party_name] = round(vote_percentage, 2)
-            else:
-                vote_percentages[party_name] = 0
-
-         # Calculate the number of seats each party has won based on the percentage of votes
-        seats_results = {}
-        for party_name, total_votes_party in party_results:
-            if total_votes_party > 0:
-                seat_count = int((total_votes_party / total_votes) * total_seats)
-                seats_results[party_name] = seat_count
-            else:
-                seats_results[party_name] = 0
-
-        # Add parties without seats to the seats_results with default value 0
-        for party_name, _ in party_results:
-            seats_results.setdefault(party_name, 0)
-
-
-    
-        # Sort the seats_results dictionary by seats in descending order
-        sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
-    
-        # Extract the party with the most seats
-        party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
-    
-        # Calculate the difference between the percentage of votes and the percentage of seats for each party
-        vote_seat_differences = {}
-        for party_name in vote_percentages.keys():
-            vote_percentage = vote_percentages[party_name]
-            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
-            difference = round(vote_percentage - seat_percentage, 2)
-            vote_seat_differences[party_name] = difference
-    
-        # Calculate the difference in seats from the winner's seats for each party
-        winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
-        seat_differences_from_winner = {}
-        for party_name in seats_results.keys():
-            party_seats = seats_results.get(party_name, 0)
-            difference = party_seats - winner_seats
-            seat_differences_from_winner[party_name] = difference
-            
-        # Insert the results into the database
-        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        for party_name in sorted(seats_results.keys()):
-            seats_won = seats_results[party_name]
-            percentage_of_seats = (seats_won / total_seats) * 100
-            percentage_of_votes = vote_percentages[party_name]
-            difference = vote_seat_differences[party_name]
-            cur.execute("""
-                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats))
-        conn.commit()
-    
-        return render_template('simple_proportional_representation.html',
-                               party_results=party_results,
-                               seats_results=seats_results,
-                               vote_percentages=vote_percentages,
-                               total_votes=total_votes,
-                               total_seats=total_seats,
-                               party_with_most_seats=party_with_most_seats,
-                               most_seats=most_seats,
-                               vote_seat_differences=vote_seat_differences,
-                               seat_differences_from_winner=seat_differences_from_winner)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Route for the "simple_proportional_representation_with_threshold" page
-@app.route('/proportional_representation_with_threshold')
-def proportional_representation_with_threshold():
-    with sqlite3.connect('database.db') as conn:
-        cur = conn.cursor()
-
-        # Calculate and display the total amount of votes
-        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
-        total_votes = cur.fetchone()[0]
-
-        # Calculate the total number of seats
-        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
-        total_seats = cur.fetchone()[0]
-
-        # Fetch the party results
-        cur.execute("""
-            SELECT
-                p.name AS party_name,
-                SUM(c.votes) AS total_votes
-            FROM
-                CANDIDATE_TABLE c
-            JOIN
-                PARTY_TABLE p ON c.party_id = p.party_id
-            GROUP BY
-                c.party_id
-        """)
-        party_results = cur.fetchall()             
-                
-        
-
-               # Calculate the number of seats each party has won based on the percentage of votes
-        seats_results = {}
-        disqualified_votes = 0  # To store the votes of disqualified parties
-        disqualified_parties = []  # To store the names of disqualified parties
-        
-        # First, disqualify parties with less than 5% of the total votes
-        for party_name, total_votes_party in party_results:
-            vote_percentage = (total_votes_party / total_votes) * 100
-        
-            # If the party has less than 5% of the total votes, disqualify them
-            if vote_percentage < 5:
-                disqualified_votes += total_votes_party
-                disqualified_parties.append(party_name)
-        
-        # Then, calculate the seat count for the remaining parties
-        for party_name, total_votes_party in party_results:
-            if party_name not in disqualified_parties:
-                # Use math.floor to round down to the nearest whole number
-                seat_count = math.floor((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
-                seats_results[party_name] = seat_count
-
-
-        # Add parties without seats to the seats_results with default value 0
-        for party_name, _ in party_results:
-            seats_results.setdefault(party_name, 0)
-            
-        # Calculate the percentage of votes for each party
-        vote_percentages = {}
-  
-        for party_name, total_votes_party in party_results:
-            if party_name not in disqualified_parties:
-                if total_votes_party:
-                    vote_percentage = (total_votes_party / (total_votes - disqualified_votes)) * 100
-                    vote_percentages[party_name] = round(vote_percentage, 2)
-                else:
-                    vote_percentages[party_name] = 0.00
-
-        # Sort the seats_results dictionary by seats in descending order
-        sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
-    
-        # Extract the party with the most seats
-        party_with_most_seats, most_seats = sorted_seats[0] if sorted_seats else ("N/A", 0)
-    
-        # Calculate the difference between the percentage of votes and the percentage of seats for each party
-        vote_seat_differences = {}
-        for party_name in vote_percentages.keys():
-            vote_percentage = vote_percentages[party_name]
-            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
-            difference = round(vote_percentage - seat_percentage, 2)
-            vote_seat_differences[party_name] = difference
-    
-        # Calculate the difference in seats from the winner's seats for each party
-        winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
-        seat_differences_from_winner = {}
-        for party_name in seats_results.keys():
-            party_seats = seats_results.get(party_name, 0)
-            difference = party_seats - winner_seats
-            seat_differences_from_winner[party_name] = difference
-            
-            
-        # Insert the results into the database
-        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        for party_name in sorted(seats_results.keys()):
-            seats_won = seats_results[party_name]
-            percentage_of_seats = (seats_won / total_seats) * 100
-            percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
-            difference = vote_seat_differences[party_name] if party_name not in disqualified_parties else 0
-            cur.execute("""
-                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, ('Simple Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats))
-        conn.commit()
-    
-        return render_template('proportional_representation_with_threshold.html',
-                               party_results=party_results,
-                               seats_results=seats_results,
-                               vote_percentages=vote_percentages,
-                               total_votes=total_votes,
-                               total_valid_votes=total_votes - disqualified_votes, 
-                               total_seats=total_seats,
-                               party_with_most_seats=party_with_most_seats,
-                               most_seats=most_seats,
-                               vote_seat_differences=vote_seat_differences,
-                               seat_differences_from_winner=seat_differences_from_winner)
-
-
-
-
 
 @app.route('/results')
 def results():
@@ -622,6 +518,90 @@ def results():
 
 
 
+
+@app.route('/first_past_the_post')
+def first_past_the_post():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                system_name, 
+                party_name, 
+                seats_won, 
+                percentage_of_seats, 
+                percentage_of_votes, 
+                difference, 
+                is_different_from_winner, 
+                total_votes, 
+                total_seats, 
+                party_with_most_seats, 
+                most_seats 
+            FROM RESULTS_TABLE
+            WHERE system_name = 'First Past the Post'
+        """)
+        results = cur.fetchall()
+        if results:
+            system_name, _, _, _, _, _, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats = results[0]
+        else:
+            system_name = is_different_from_winner = total_votes = total_seats = party_with_most_seats = most_seats = None
+        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
+
+
+# Route for the "Simple Proportional Representation" page
+@app.route('/simple_proportional_representation')
+def simple_proportional_representation():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                system_name, 
+                party_name, 
+                seats_won, 
+                percentage_of_seats, 
+                percentage_of_votes, 
+                difference, 
+                is_different_from_winner, 
+                total_votes, 
+                total_seats, 
+                party_with_most_seats, 
+                most_seats 
+            FROM RESULTS_TABLE
+        """)
+        results = cur.fetchall()
+        if results:
+            system_name, _, _, _, _, _, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats = results[0]
+        else:
+            system_name = is_different_from_winner = total_votes = total_seats = party_with_most_seats = most_seats = None
+        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
+
+
+# Route for the "Simple Proportional Representation with Threshold" page
+@app.route('/simple_proportional_representation_with_threshold')
+def simple_proportional_representation_with_threshold():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                system_name, 
+                party_name, 
+                seats_won, 
+                percentage_of_seats, 
+                percentage_of_votes, 
+                difference, 
+                is_different_from_winner, 
+                total_votes, 
+                total_seats, 
+                party_with_most_seats, 
+                most_seats 
+            FROM RESULTS_TABLE
+            WHERE system_name = 'Simple Proportional Representation with Threshold'
+        """)
+        results = cur.fetchall()
+        if results:
+            system_name, _, _, _, _, _, is_different_from_winner, total_votes, total_seats, party_with_most_seats, most_seats = results[0]
+        else:
+            system_name = is_different_from_winner = total_votes = total_seats = party_with_most_seats = most_seats = None
+        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes, party_with_most_seats=party_with_most_seats, most_seats=most_seats)
 
 
 
