@@ -30,7 +30,6 @@
 
     <table>
         <tr>
-            <th>System Name</th>
             <th>Party Name</th>
             <th>Seats Won</th>
             <th>Percentage of Seats</th>
@@ -39,7 +38,7 @@
         </tr>
         {% for result in results %}
         <tr>
-            <td>{{ result[0] }}</td>
+
             <td>{{ result[1] }}</td>
             <td>{{ result[2] }}</td>
             <td>{{ '%.2f'|format(result[3]) }}</td>
