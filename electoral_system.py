@@ -297,7 +297,7 @@ def first_past_the_post():
         
         # Insert the results into the database
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        for party_name in seats_results.keys():
+        for party_name in sorted(seats_results.keys()):
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name]
@@ -418,7 +418,7 @@ def simple_proportional_representation():
             
         # Insert the results into the database
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        for party_name in seats_results.keys():
+        for party_name in sorted(seats_results.keys()):
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name]
@@ -560,7 +560,7 @@ def proportional_representation_with_threshold():
             
         # Insert the results into the database
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        for party_name in seats_results.keys():
+        for party_name in sorted(seats_results.keys()):
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
