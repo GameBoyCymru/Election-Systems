@@ -28,7 +28,7 @@
                 <th>Votes</th>
                 <th>Seats Won</th>
                 <th>Percentage of the Seats</th>
-                <th>Percentage of the Votes</th>
+                <th>Percentage of the Votes that met the Threshold</th>
                 <th>Difference Between Percentage Of Popular Votes And Percentage Of Seats</th>
                 <th>Seats Difference From Winner</th>
             </tr>
@@ -55,19 +55,19 @@
                 </td>
 
                 <td>
-                    {% for party, votes_percentage in vote_percentages.items() %}
-                    {% if party == party_name %}
-                    {{ votes_percentage }}%
+                    {% if party_name in vote_percentages %}
+                        {{ vote_percentages[party_name] }}%
+                    {% else %}
+                        0.00%
                     {% endif %}
-                    {% endfor %}
                 </td>
 
                 <td>
-                    {% for party, difference in vote_seat_differences.items() %}
-                    {% if party == party_name %}
-                    {{ difference }}%
+                    {% if party_name in vote_seat_differences %}
+                        {{ vote_seat_differences[party_name] }}%
+                    {% else %}
+                        0.00%
                     {% endif %}
-                    {% endfor %}
                 </td>
 
                 <td>

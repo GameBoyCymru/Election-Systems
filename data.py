@@ -1,13 +1,8 @@
 from flask import Flask, render_template
-import sqlite3 
+import sqlite3
+import csv 
 import math
-from myLists import candidate_data
-from myLists import country_data
-from myLists import region_data
-from myLists import county_data
-from myLists import constituency_data
-from myLists import party_data
-from myLists import gender_data
+import os
 
 app = Flask(__name__) 
 
@@ -15,6 +10,23 @@ app = Flask(__name__)
 conn = sqlite3.connect('database.db')
 cur = conn.cursor()
 
+candidate_data = open('candidate_data.csv')
+candidate_data = csv.reader(candidate_data)
+
+constituency_data = open('constituency_data.csv')
+constituency_data = csv.reader(constituency_data)
+
+county_data = open('county_data.csv')
+county_data = csv.reader(county_data)
+
+country_data = open('country_data.csv')
+country_data = csv.reader(country_data)
+
+party_data = open('party_data.csv')
+party_data = csv.reader(party_data)
+
+region_data = open('region_data.csv')
+region_data = csv.reader(region_data)
 
 # Creating the Tables for the database
         
@@ -106,13 +118,47 @@ cur.execute("""CREATE TABLE IF NOT EXISTS PARTYCONSTITUENCY_TABLE (
         )""")
    
 
-cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?, ?)", gender_data)
+gender_data = open('gender_data.csv')
+with open('gender_data.csv', newline='') as csvfile:
+    gender_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
+
+candidate_data = open('candidate_data.csv')
+with open('candidate_data.csv', newline='', encoding='utf-8-sig') as csvfile:
+    candidate_data = [(int(row[0]), row[1], int(row[2]), row[3], int(row[4]),  int(row[5]),  int(row[6]),) for row in csv.reader(csvfile)]
+
+    
+party_data = open('party_data.csv')
+with open('party_data.csv', newline='', encoding='utf-8-sig') as csvfile:
+    party_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
+    
+constituency_data = open('constituency_data.csv')
+with open('constituency_data.csv', newline='' , encoding='utf-8-sig') as csvfile:
+    constituency_data = [(int(row[0]), row[1], int(row[2]), row[3]) for row in csv.reader(csvfile)]
+    
+region_data = open('region_data.csv')
+with open('region_data.csv', newline='', encoding='utf-8-sig') as csvfile:
+    region_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
+    
+county_data = open('county_data.csv')
+with open('county_data.csv', newline='', encoding='utf-8-sig') as csvfile:
+    county_data = [(int(row[0]), row[1], int(row[2]), int(row[3])) for row in csv.reader(csvfile)]
+    
+country_data = open('country_data.csv')
+with open('country_data.csv', newline='', encoding='utf-8-sig') as csvfile:
+    country_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
+    
+
+
+cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?,?);", gender_data)
 cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id) VALUES (?, ?, ?, ?, ?, ?, ?)", candidate_data)
 cur.executemany("INSERT INTO PARTY_TABLE (party_id, name) VALUES (?, ?)", party_data)
 cur.executemany("INSERT INTO CONSTITUENCY_TABLE (constituency_id, name, county_id, type) VALUES (?, ?, ?, ?)", constituency_data)
 cur.executemany("INSERT INTO COUNTY_TABLE (county_id, name, region_id, country_id) VALUES (?, ?, ?, ?)", county_data)
 cur.executemany("INSERT INTO REGION_TABLE (region_id, name) VALUES (?, ?)", region_data)
 cur.executemany("INSERT INTO COUNTRY_TABLE (country_id, name) VALUES (?, ?)", country_data)
+
+
+
 
 conn.commit()
 cur.close()
@@ -397,16 +443,9 @@ def proportional_representation_with_threshold():
             GROUP BY
                 c.party_id
         """)
-        party_results = cur.fetchall()
-
-        # Calculate the percentage of votes for each party
-        vote_percentages = {}
-        for party_name, total_votes_party in party_results:
-            if total_votes_party:
-                vote_percentage = (total_votes_party / total_votes) * 100
-                vote_percentages[party_name] = round(vote_percentage, 2)
-            else:
-                vote_percentages[party_name] = 0
+        party_results = cur.fetchall()             
+                
+        
 
                # Calculate the number of seats each party has won based on the percentage of votes
         seats_results = {}
@@ -434,6 +473,17 @@ def proportional_representation_with_threshold():
         for party_name, _ in party_results:
             seats_results.setdefault(party_name, 0)
             
+        # Calculate the percentage of votes for each party
+        vote_percentages = {}
+  
+        for party_name, total_votes_party in party_results:
+            if party_name not in disqualified_parties:
+                if total_votes_party:
+                    vote_percentage = (total_votes_party / (total_votes - disqualified_votes)) * 100
+                    vote_percentages[party_name] = round(vote_percentage, 2)
+                else:
+                    vote_percentages[party_name] = 0.00
+
     
         # Sort the seats_results dictionary by seats in descending order
         sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
