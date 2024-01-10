@@ -5,43 +5,54 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <title>{{ system_name }}</title>
+    <title>Results</title>
 </head>
 <body>
-
     <nav>
-        <h1>{{ system_name }} Results</h1>
+        <h1>System: {{ election_system_name }}</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
-    
 
-    <h2>Total Votes: {{ total_votes }}</h2>
-    <h2>Total Seats: {{ total_seats }}</h2>
-    <h2>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} seats)</h2>
-    <h2>Is different from winner: {{ is_different_from_winner }}</h2>
+    {% if results %}
+    <section class="info">
+        <section class="stats">
+            <p>Total Votes: {{ total_votes }}</p>
+            {% if results[0][9] != total_votes %}
+                <p>Votes after Threshold: {{ results[0][9] }}</p>
+            {% endif %}
+            <p>Total Seats: {{ total_seats }}</p>
+        </section>
+
+        <section class="stats">
+            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</strong></p>
+            <p><strong>Is Different From Winner: {{ results[0][8] }}</strong></p>
+        </section>
+    </section>
+    {% endif %}
 
     <table>
         <thead>
             <tr>
-                <th>Party</th>
-                <th>Seats Won</th>
-                <th>Percentage of Seats</th>
-                <th>Percentage of Votes</th>
-                <th>Difference in Percentage of Votes and Percentage of Seats</th>
+                <th>Name</th>
+                <th>Votes</th>
+                <th>Seats</th>
+                <th>Vote Percentages</th>
+                <th>Vote Seat Differences</th>
+                <th>Seat Differences From Winner</th>
             </tr>
         </thead>
         <tbody>
             {% for result in results %}
-            <tr>
-                <td>{{ result[1] }}</td>
-                <td>{{ result[2] }}</td>
-                <td>{{ '%.2f'|format(result[3]) }}%</td>
-                <td>{{ '%.2f'|format(result[4]) }}%</td>
-                <td>{{ '%.2f'|format(result[5]) }}%</td>
-            </tr>
+                <tr>
+                    <td>{{ result[2] }}</td>
+                    <td>{{ result[3] }}</td>
+                    <td>{{ result[4] }}</td>
+                    <td>{{ result[5] }}</td>
+                    <td>{{ result[6] }}</td>
+                    <td>{{ result[7] }}</td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
-
 </body>
 </html>
