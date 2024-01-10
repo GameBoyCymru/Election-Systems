@@ -2,7 +2,6 @@ from flask import Flask, render_template
 import sqlite3
 import csv 
 import math
-import os
 
 app = Flask(__name__) 
 
