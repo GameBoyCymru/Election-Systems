@@ -147,7 +147,7 @@ with open('country_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     country_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
     
 
-
+# Insert data into the tables regarding the data from the csv files
 cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?,?);", gender_data)
 cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id) VALUES (?, ?, ?, ?, ?, ?, ?)", candidate_data)
 cur.executemany("INSERT INTO PARTY_TABLE (party_id, name) VALUES (?, ?)", party_data)
@@ -157,6 +157,18 @@ cur.executemany("INSERT INTO REGION_TABLE (region_id, name) VALUES (?, ?)", regi
 cur.executemany("INSERT INTO COUNTRY_TABLE (country_id, name) VALUES (?, ?)", country_data)
 
 
+# Create the table for the results of each election system
+cur.execute("""
+            CREATE TABLE IF NOT EXISTS RESULTS_TABLE (
+                system_name TEXT,
+                party_name TEXT,
+                seats_won INTEGER,
+                percentage_of_seats REAL,
+                percentage_of_votes REAL,
+                difference REAL
+            )
+        """)
+       
 
 
 conn.commit()
@@ -278,7 +290,28 @@ def first_past_the_post():
             difference = party_seats - winner_seats
             seat_differences_from_winner[party_name] = difference
         
-        return render_template('first_past_the_post.html', party_results=party_results, seats_results=seats_results, vote_percentages=vote_percentages, total_votes=total_votes, total_seats=total_seats, party_with_most_seats=party_with_most_seats, most_seats=most_seats, vote_seat_differences=vote_seat_differences, seat_differences_from_winner=seat_differences_from_winner)
+        # Insert the results into the database
+        for party_name in seats_results.keys():
+            seats_won = seats_results[party_name]
+            percentage_of_seats = (seats_won / total_seats) * 100
+            percentage_of_votes = vote_percentages[party_name]
+            difference = vote_seat_differences[party_name]
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+        conn.commit()
+        
+        return render_template('first_past_the_post.html', 
+                               party_results=party_results, 
+                               seats_results=seats_results, 
+                               vote_percentages=vote_percentages, 
+                               total_votes=total_votes, 
+                               total_seats=total_seats, 
+                               party_with_most_seats=party_with_most_seats, 
+                               most_seats=most_seats, 
+                               vote_seat_differences=vote_seat_differences, 
+                               seat_differences_from_winner=seat_differences_from_winner)
 
 
 
@@ -376,6 +409,18 @@ def simple_proportional_representation():
             party_seats = seats_results.get(party_name, 0)
             difference = party_seats - winner_seats
             seat_differences_from_winner[party_name] = difference
+            
+        # Insert the results into the database
+        for party_name in seats_results.keys():
+            seats_won = seats_results[party_name]
+            percentage_of_seats = (seats_won / total_seats) * 100
+            percentage_of_votes = vote_percentages[party_name]
+            difference = vote_seat_differences[party_name]
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+        conn.commit()
     
         return render_template('simple_proportional_representation.html',
                                party_results=party_results,
@@ -416,7 +461,7 @@ def simple_proportional_representation():
 
 
 
-# Route for the "simple_proportional_representation" page
+# Route for the "simple_proportional_representation_with_threshold" page
 @app.route('/proportional_representation_with_threshold')
 def proportional_representation_with_threshold():
     with sqlite3.connect('database.db') as conn:
@@ -504,6 +549,17 @@ def proportional_representation_with_threshold():
             party_seats = seats_results.get(party_name, 0)
             difference = party_seats - winner_seats
             seat_differences_from_winner[party_name] = difference
+            
+        for party_name in seats_results.keys():
+            seats_won = seats_results[party_name]
+            percentage_of_seats = (seats_won / total_seats) * 100
+            percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
+            difference = vote_seat_differences[party_name] if party_name not in disqualified_parties else 0
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+        conn.commit()
     
         return render_template('proportional_representation_with_threshold.html',
                                party_results=party_results,
