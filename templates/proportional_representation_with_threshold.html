@@ -16,11 +16,20 @@
         <h1>Simple Proportional Representation with 5% Threshold</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
-    <h2>Total Votes: {{ total_votes }}</h2>
-    <h2>Votes after Threshold: {{ total_valid_votes }}</h2>
-    <h2>Total Seats: {{ total_seats }}</h2>
+    
+    <section class="info">
+        <section class="stats">
+            <p>Total Votes: {{ total_votes }}</p>
+            <p>Votes after Threshold: {{ total_valid_votes }}</p>
+            <p>Total Seats: {{ total_seats }}</p>
+        </section>
 
-    <h2>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</h2>
+        <section class="stats">
+            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</strong></p>
+            <p><strong>Different from actual winner: {% if party_with_most_seats != "Conservative" %}Yes{% else %}No{% endif %}</strong></p>
+        </section>
+    </section>
+
     <table border="1">
         <thead>
             <tr>

@@ -484,7 +484,6 @@ def proportional_representation_with_threshold():
                 else:
                     vote_percentages[party_name] = 0.00
 
-    
         # Sort the seats_results dictionary by seats in descending order
         sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
     
