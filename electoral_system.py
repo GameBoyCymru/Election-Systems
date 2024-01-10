@@ -299,7 +299,7 @@ def first_past_the_post():
             cur.execute("""
                 INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+            """, ('First past the post', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
         conn.commit()
         
         return render_template('first_past_the_post.html', 
@@ -419,7 +419,7 @@ def simple_proportional_representation():
             cur.execute("""
                 INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+            """, ('Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
         conn.commit()
     
         return render_template('simple_proportional_representation.html',
@@ -558,7 +558,7 @@ def proportional_representation_with_threshold():
             cur.execute("""
                 INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, ('proportional_representation_with_threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+            """, ('Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
         conn.commit()
     
         return render_template('proportional_representation_with_threshold.html',
@@ -578,7 +578,15 @@ def proportional_representation_with_threshold():
 
 
 
-
+#  Create a new route that will display the results table
+@app.route('/results')
+def results():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM RESULTS_TABLE")
+        results = cur.fetchall()
+        return render_template('results.html', results=results)
+    
 
 
 
