@@ -157,18 +157,25 @@ cur.executemany("INSERT INTO REGION_TABLE (region_id, name) VALUES (?, ?)", regi
 cur.executemany("INSERT INTO COUNTRY_TABLE (country_id, name) VALUES (?, ?)", country_data)
 
 
-# Create the table for the results of each election system
+cur.execute("DROP TABLE IF EXISTS RESULTS_TABLE")
+
 cur.execute("""
-            CREATE TABLE IF NOT EXISTS RESULTS_TABLE (
-                system_name TEXT,
-                party_name TEXT,
-                seats_won INTEGER,
-                percentage_of_seats REAL,
-                percentage_of_votes REAL,
-                difference REAL
-            )
-        """)
+    CREATE TABLE RESULTS_TABLE (
+        system_name TEXT,
+        party_name TEXT,
+        seats_won INTEGER,
+        percentage_of_seats REAL,
+        percentage_of_votes REAL,
+        difference REAL,
+        is_different_from_winner TEXT
+    )
+""")
        
+
+
+
+
+
 
 
 conn.commit()
@@ -291,18 +298,19 @@ def first_past_the_post():
             seat_differences_from_winner[party_name] = difference
         
         # Insert the results into the database
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
         for party_name in seats_results.keys():
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name]
             difference = vote_seat_differences[party_name]
             cur.execute("""
-                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, ('First past the post', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, ('First Past the Post', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
         conn.commit()
         
-        return render_template('first_past_the_post.html', 
+    return render_template('first_past_the_post.html', 
                                party_results=party_results, 
                                seats_results=seats_results, 
                                vote_percentages=vote_percentages, 
@@ -411,15 +419,16 @@ def simple_proportional_representation():
             seat_differences_from_winner[party_name] = difference
             
         # Insert the results into the database
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
         for party_name in seats_results.keys():
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name]
             difference = vote_seat_differences[party_name]
             cur.execute("""
-                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, ('Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, ('Simple Proportional Representation', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
         conn.commit()
     
         return render_template('simple_proportional_representation.html',
@@ -550,15 +559,17 @@ def proportional_representation_with_threshold():
             difference = party_seats - winner_seats
             seat_differences_from_winner[party_name] = difference
             
-        for party_name in seats_results.keys():
+        # Insert the results into the database
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+        for party_name in seats_results.keys():            
             seats_won = seats_results[party_name]
             percentage_of_seats = (seats_won / total_seats) * 100
             percentage_of_votes = vote_percentages[party_name] if party_name not in disqualified_parties else 0 
             difference = vote_seat_differences[party_name] if party_name not in disqualified_parties else 0
             cur.execute("""
-                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, ('Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference))
+                INSERT INTO RESULTS_TABLE (system_name, party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, ('Simple Proportional Representation with 5% Threshold', party_name, seats_won, percentage_of_seats, percentage_of_votes, difference, is_different_from_winner))
         conn.commit()
     
         return render_template('proportional_representation_with_threshold.html',
@@ -578,18 +589,17 @@ def proportional_representation_with_threshold():
 
 
 
-#  Create a new route that will display the results table
 @app.route('/results')
 def results():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
+        cur.execute("SELECT SUM(seats_won) as total_seats, SUM(percentage_of_votes) as total_votes FROM RESULTS_TABLE")
+        total_seats, total_votes = cur.fetchone()
         cur.execute("SELECT * FROM RESULTS_TABLE")
         results = cur.fetchall()
-        return render_template('results.html', results=results)
-    
-
-
-
+        system_name = results[0][0] if results else None
+        is_different_from_winner = results[0][-1] if results else None
+        return render_template('results.html', results=results, system_name=system_name, is_different_from_winner=is_different_from_winner, total_seats=total_seats, total_votes=total_votes)
 
 
 

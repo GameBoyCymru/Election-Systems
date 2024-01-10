@@ -9,10 +9,25 @@
 </head>
 <body>
     <nav>
-        <h1>First Past the Post by Constituency</h1>
+        <h1>System Name: {{ system_name }}</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
-    <h1>Results</h1>
+
+
+    <section class="info">
+        <section class="stats">
+            <p>Total Votes: {{ total_votes }}</p>
+            <p>Total Seats: {{ total_seats }}</p>
+        </section>
+
+        <section class="stats">
+            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ( {{ most_seats }} Seats )</strong></p>
+            <p><strong>Different from actual winner: {{ is_different_from_winner }}</strong></p>
+        </section>
+    </section>
+
+
+
     <table>
         <tr>
             <th>System Name</th>
@@ -27,9 +42,9 @@
             <td>{{ result[0] }}</td>
             <td>{{ result[1] }}</td>
             <td>{{ result[2] }}</td>
-            <td>{{ result[3] }}</td>
-            <td>{{ result[4] }}</td>
-            <td>{{ result[5] }}</td>
+            <td>{{ '%.2f'|format(result[3]) }}</td>
+            <td>{{ '%.2f'|format(result[4]) }}</td>
+            <td>{{ '%.2f'|format(result[5]) }}</td>
         </tr>
         {% endfor %}
     </table>
