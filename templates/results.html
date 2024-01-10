@@ -5,47 +5,44 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <title>Results</title>
+    <title>{{ system_name }}</title>
 </head>
 <body>
+
     <nav>
-        <h1>System Name: {{ system_name }}</h1>
+        <h1>{{ system_name }} Results</h1>
         <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
     </nav>
+    
 
-
-    <section class="info">
-        <section class="stats">
-            <p>Total Votes: {{ total_votes }}</p>
-            <p>Total Seats: {{ total_seats }}</p>
-        </section>
-
-        <section class="stats">
-            <p><strong>Party with Most Seats: {{ party_with_most_seats }} ( {{ seats_for_winner }} Seats )</strong></p>
-            <p><strong>Different from actual winner: {{ is_different_from_winner }}</strong></p>
-        </section>
-    </section>
-
-
+    <h2>Total Votes: {{ total_votes }}</h2>
+    <h2>Total Seats: {{ total_seats }}</h2>
+    <h2>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} seats)</h2>
+    <h2>Is different from winner: {{ is_different_from_winner }}</h2>
 
     <table>
-        <tr>
-            <th>Party Name</th>
-            <th>Seats Won</th>
-            <th>Percentage of Seats</th>
-            <th>Percentage of Votes</th>
-            <th>Difference Between Percentage Of Popular Votes And Percentage Of Seats</th>
-        </tr>
-        {% for result in results %}
-        <tr>
-
-            <td>{{ result[1] }}</td>
-            <td>{{ result[2] }}</td>
-            <td>{{ '%.2f'|format(result[3]) }}%</td>
-            <td>{{ '%.2f'|format(result[4]) }}%</td>
-            <td>{{ '%.2f'|format(result[5]) }}%</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>Party</th>
+                <th>Seats Won</th>
+                <th>Percentage of Seats</th>
+                <th>Percentage of Votes</th>
+                <th>Difference in Percentage of Votes and Percentage of Seats</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result[1] }}</td>
+                <td>{{ result[2] }}</td>
+                <td>{{ '%.2f'|format(result[3]) }}%</td>
+                <td>{{ '%.2f'|format(result[4]) }}%</td>
+                <td>{{ '%.2f'|format(result[5]) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
+
+    <p>Difference from winner: {{ is_different_from_winner }}</p>
 </body>
 </html>
