@@ -17,15 +17,15 @@
     <section class="info">
         <section class="stats">
             <p>Total Votes: {{ total_votes }}</p>
-            {% if results[0][9] != total_votes %}
-                <p>Votes after Threshold: {{ results[0][9] }}</p>
+            {% if results[0][10] != total_votes %}
+                <p>Votes after Threshold: {{ results[0][10] }}</p>
             {% endif %}
             <p>Total Seats: {{ total_seats }}</p>
         </section>
 
         <section class="stats">
             <p><strong>Party with Most Seats: {{ party_with_most_seats }} ({{ most_seats }} Seats)</strong></p>
-            <p><strong>Is Different From Winner: {{ results[0][8] }}</strong></p>
+            <p><strong>Is Different From Winner: {{ results[0][9] }}</strong></p>
         </section>
     </section>
     {% endif %}
@@ -37,6 +37,7 @@
                 <th>Votes</th>
                 <th>Seats</th>
                 <th>Vote Percentages</th>
+                <th>Seat Percentages</th>
                 <th>Vote Seat Differences</th>
                 <th>Seat Differences From Winner</th>
             </tr>
@@ -44,12 +45,13 @@
         <tbody>
             {% for result in results %}
                 <tr>
-                    <td>{{ result[2] }}</td>
-                    <td>{{ result[3] }}</td>
-                    <td>{{ result[4] }}</td>
-                    <td>{{ result[5] }}</td>
-                    <td>{{ result[6] }}</td>
-                    <td>{{ result[7] }}</td>
+                    <td>{{ result[2] }}</td>    <!-- Name -->
+                    <td>{{ result[3] }}</td>    <!-- Votes -->
+                    <td>{{ result[4] }}</td>    <!-- Seats -->
+                    <td>{{ '%.2f'|format(result[5]) }}%</td>    <!-- Vote Percentages -->
+                    <td>{{ '%.2f'|format(result[6]) }}%</td>    <!-- Seat Percentages -->
+                    <td>{{ '%.2f'|format(result[7]) }}%</td>    <!-- Vote Seat Differences -->
+                    <td>{{ result[8] }}</td>    <!-- Seat Differences From Winner -->
                 </tr>
             {% endfor %}
         </tbody>

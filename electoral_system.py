@@ -113,6 +113,7 @@ cur.execute("""
                 votes INTEGER,
                 seats INTEGER,
                 vote_percentages REAL,
+                seat_percentages REAL,
                 vote_seat_differences REAL,
                 seat_differences_from_winner INTEGER,
                 is_different_from_winner TEXT,
@@ -168,13 +169,13 @@ cur.close()
 conn.close()
 
 
-def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes):
+def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, seat_percentages,vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO RESULTS_TABLE (election_system_name, name, votes, seats, vote_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (election_system_name, name, votes, seats, vote_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes))
+            INSERT INTO RESULTS_TABLE (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes))
 
 
 def first_past_the_post():
@@ -278,10 +279,11 @@ def first_past_the_post():
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
             vote_percentage = vote_percentages[party_name]
+            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
             vote_seat_difference = vote_seat_differences[party_name]
             seat_difference_from_winner = seat_differences_from_winner[party_name]
         
-            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
+            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, seat_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
         
         conn.commit()
    
@@ -369,10 +371,11 @@ def simple_proportional_representation():
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
             vote_percentage = vote_percentages[party_name]
+            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
             vote_seat_difference = vote_seat_differences[party_name]
             seat_difference_from_winner = seat_differences_from_winner[party_name]
         
-            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
+            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, seat_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
             
         conn.commit()
         
@@ -478,10 +481,11 @@ def proportional_representation_with_threshold():
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
             vote_percentage = vote_percentages.get(party_name, 0)  # Use get method to avoid KeyError
+            seat_percentage = (seats_results.get(party_name, 0) / total_seats) * 100
             vote_seat_difference = vote_seat_differences.get(party_name, 0)  # Use get method to avoid KeyError
             seat_difference_from_winner = seat_differences_from_winner.get(party_name, 0)  # Use get method to avoid KeyError
 
-            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
+            insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, seat_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes)
 
         conn.commit()
         
