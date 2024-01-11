@@ -530,7 +530,8 @@ def get_results_from_table(election_system_name):
         rows = cur.fetchall()
 
         total_votes = sum(row[3] for row in rows)
-        total_seats = sum(row[4] for row in rows)
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
 
         
         # Find the party with the most seats and its seat count
