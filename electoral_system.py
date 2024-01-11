@@ -529,7 +529,11 @@ def get_results_from_table(election_system_name):
         cur.execute("SELECT * FROM RESULTS_TABLE WHERE election_system_name = ?", (election_system_name,))
         rows = cur.fetchall()
 
-        total_votes = sum(row[3] for row in rows)
+        
+        cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
+        total_votes = cur.fetchone()[0]
+        
+        
         cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
         total_seats = cur.fetchone()[0]
 
