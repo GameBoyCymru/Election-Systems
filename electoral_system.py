@@ -530,7 +530,7 @@ def proportional_representation_by_county():
             proportion_in_county = total_party_votes / sum([row[2] for row in party_results_by_county if row[1] == county_id])
 
             # Calculate the seats for the party in the county (rounded down)
-            seats_in_county = math.floor(proportion_in_county * county_total_seats)
+            seats_in_county = math.floor(round(proportion_in_county * county_total_seats))
 
             # Update the total seats for the party
             party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_county
@@ -541,9 +541,9 @@ def proportional_representation_by_county():
 
         # Insert the results into the database
         election_system_name = "Proportional Representation by County"
-        is_different_from_winner = 'No'  # You may need to adjust this based on your criteria
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results_by_county if row[0] == party_name])
@@ -608,8 +608,8 @@ def get_results_from_table(election_system_name):
         total_votes = cur.fetchone()[0]
         
         
-        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
-        total_seats = cur.fetchone()[0]
+        # Calculate the total number of seats from the seats awarded
+        total_seats = sum(row[4] for row in rows)
 
         # Find the seat count of the party with the most seats
         most_seats = max(row[4] for row in rows)
