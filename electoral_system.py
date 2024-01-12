@@ -3,6 +3,7 @@ import sqlite3
 import csv 
 import math
 
+
 app = Flask(__name__) 
 
 
@@ -40,9 +41,15 @@ cur.execute("""CREATE TABLE IF NOT EXISTS CANDIDATE_TABLE (
             votes INTEGER NOT NULL,
             party_id INTEGER NOT NULL,
             constituency_id INTEGER NOT NULL,
+            county_id INTEGER NOT NULL,
+            region_id INTEGER NOT NULL,
+            country_id INTEGER NOT NULL,
             FOREIGN KEY (gender_id) REFERENCES GENDER_TABLE(gender_id),
             FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id),
-            FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id)
+            FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id),
+            FOREIGN KEY (county_id) REFERENCES COUNTY_TABLE(county_id),
+            FOREIGN KEY (region_id) REFERENCES REGION_TABLE(region_id),
+            FOREIGN KEY (country_id) REFERENCES COUNTRY_TABLE(country_id)
         )""")
 
 
@@ -122,40 +129,32 @@ cur.execute("""
             )
         """)
 
-
-
-gender_data = open('data/gender_data.csv')
 with open('data/gender_data.csv', newline='') as csvfile:
     gender_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
-candidate_data = open('data/candidate_data.csv')
 with open('data/candidate_data.csv', newline='', encoding='utf-8-sig') as csvfile:
-    candidate_data = [(int(row[0]), row[1], int(row[2]), row[3], int(row[4]),  int(row[5]),  int(row[6]),) for row in csv.reader(csvfile)]
+    candidate_data = [(int(row[0]), row[1], int(row[2]), row[3], int(row[4]),  int(row[5]),  int(row[6]), int(row[7]),  int(row[8]),  int(row[9])) for row in csv.reader(csvfile)]
 
-party_data = open('data/party_data.csv')
 with open('data/party_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     party_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
     
-constituency_data = open('data/constituency_data.csv')
 with open('data/constituency_data.csv', newline='' , encoding='utf-8-sig') as csvfile:
     constituency_data = [(int(row[0]), row[1], int(row[2]), row[3]) for row in csv.reader(csvfile)]
     
-region_data = open('data/region_data.csv')
 with open('data/region_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     region_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
     
-county_data = open('data/county_data.csv')
+
 with open('data/county_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     county_data = [(int(row[0]), row[1], int(row[2]), int(row[3])) for row in csv.reader(csvfile)]
     
-country_data = open('data/country_data.csv')
 with open('data/country_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     country_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
     
 
 
 cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?,?);", gender_data)
-cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id) VALUES (?, ?, ?, ?, ?, ?, ?)", candidate_data)
+cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id, county_id, region_id, country_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", candidate_data)
 cur.executemany("INSERT INTO PARTY_TABLE (party_id, name) VALUES (?, ?)", party_data)
 cur.executemany("INSERT INTO CONSTITUENCY_TABLE (constituency_id, name, county_id, type) VALUES (?, ?, ?, ?)", constituency_data)
 cur.executemany("INSERT INTO COUNTY_TABLE (county_id, name, region_id, country_id) VALUES (?, ?, ?, ?)", county_data)
@@ -493,13 +492,84 @@ def proportional_representation_with_threshold():
             insert_into_results_table(election_system_name, party_name, votes, seats, vote_percentage, seat_percentage, vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
 
         conn.commit()
-        
-        
+
+
+def proportional_representation_by_county():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+        # Get the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by county
+        cur.execute("""
+            SELECT
+                p.name AS party_name,
+                c.county_id,
+                SUM(c.votes) AS total_party_votes,
+                COUNT(DISTINCT c.constituency_id) AS county_total_seats
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            JOIN
+                CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
+            GROUP BY
+                c.party_id, c.county_id
+        """)
+
+        party_results_by_county = cur.fetchall()
+
+        # Initialize a dictionary to store the total seats for each party
+        party_total_seats = {}
+
+        # Iterate over the results for each party and county
+        for party_name, county_id, total_party_votes, county_total_seats in party_results_by_county:
+            # Calculate the proportion of votes for the party in the county
+            proportion_in_county = total_party_votes / sum([row[2] for row in party_results_by_county if row[1] == county_id])
+
+            # Calculate the seats for the party in the county (rounded down)
+            seats_in_county = math.floor(proportion_in_county * county_total_seats)
+
+            # Update the total seats for the party
+            party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_county
+
+        # Calculate total votes and total seats for the entire election
+        total_votes = sum([row[2] for row in party_results_by_county])
+        total_seats = sum(party_total_seats.values())
+
+        # Insert the results into the database
+        election_system_name = "Proportional Representation by County"
+        is_different_from_winner = 'No'  # You may need to adjust this based on your criteria
+        total_valid_votes = total_votes
+        party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+
+        for party_name, seats in party_total_seats.items():
+            votes = sum([row[2] for row in party_results_by_county if row[0] == party_name])
+            vote_percentage = (votes / total_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(party_total_seats.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
+
         
 first_past_the_post()
 simple_proportional_representation()
-proportional_representation_with_threshold()        
-        
+proportional_representation_with_threshold()
+proportional_representation_by_county()
+
 # Route for the "index" page
 @app.route('/')
 def index():
@@ -525,7 +595,6 @@ def index():
     return render_template('index.html', menu_items=menu_items)
 
 
-
 def get_results_from_table(election_system_name):
     with sqlite3.connect('database.db') as conn:
         
@@ -542,9 +611,10 @@ def get_results_from_table(election_system_name):
         cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
         total_seats = cur.fetchone()[0]
 
-        
         # Find the seat count of the party with the most seats
         most_seats = max(row[4] for row in rows)
+
+
 
 
     return rows, total_votes, total_seats, most_seats
