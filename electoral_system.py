@@ -527,13 +527,19 @@ def proportional_representation_by_county():
         # Iterate over the results for each party and county
         for party_name, county_id, total_party_votes, county_total_seats in party_results_by_county:
             # Calculate the proportion of votes for the party in the county
-            proportion_in_county = total_party_votes / sum([row[2] for row in party_results_by_county if row[1] == county_id])
+            total_votes_in_county = sum(row[2] for row in party_results_by_county if row[1] == county_id)
 
-            # Calculate the seats for the party in the county (rounded down)
-            seats_in_county = math.floor(round(proportion_in_county * county_total_seats))
+            if total_votes_in_county > 0:
+                proportion_in_county = total_party_votes / total_votes_in_county
 
-            # Update the total seats for the party
-            party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_county
+                # Calculate the seats for the party in the county (rounded to the nearest integer)
+                seats_in_county = proportion_in_county * county_total_seats
+
+                # Update the total seats for the party
+                party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_county
+
+        # Round up the total seats for each party
+        party_total_seats = {party_name: math.ceil(seats) for party_name, seats in party_total_seats.items()}
 
         # Calculate total votes and total seats for the entire election
         total_votes = sum([row[2] for row in party_results_by_county])
