@@ -716,9 +716,6 @@ def proportional_representation_by_country():
                 # Calculate the seats for the party in the country (rounded to the nearest integer)
                 seats_in_country = proportion_in_country * country_total_seats
 
-                # roudn the seats to the nearest integer
-                seats_in_country = round(seats_in_country)
-
                 # Update the total seats for the party
                 party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_country
 
@@ -768,12 +765,18 @@ def proportional_representation_by_country():
 
         conn.commit()
 
+
+
+
+
+
 first_past_the_post()
 simple_proportional_representation()
 proportional_representation_with_threshold()
 proportional_representation_by_county()
 proportional_representation_by_region()
 proportional_representation_by_country()
+
 
 # Route for the "index" page
 @app.route('/')
