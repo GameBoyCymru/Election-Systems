@@ -129,6 +129,19 @@ cur.execute("""
             )
         """)
 
+
+#drops table RESULTS_TABLE if exists
+cur.execute("DROP TABLE IF EXISTS DEBUG_TABLE")
+#runs create table script
+cur.execute("""
+            CREATE TABLE DEBUG_TABLE (
+                id integer,
+                name TEXT,
+                total_seats INTEGER,
+                seats_awarded INTEGER
+            )
+        """)
+
 with open('data/gender_data.csv', newline='') as csvfile:
     gender_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
@@ -176,6 +189,8 @@ def insert_into_results_table(election_system_name, name, votes, seats, vote_per
             INSERT INTO RESULTS_TABLE (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats))
+
+
 
 
 def first_past_the_post():
@@ -527,20 +542,20 @@ def proportional_representation_by_county():
 
         # Fetch party results grouped by county
         cur.execute("""
-            SELECT
-                p.name AS party_name,
-                c.county_id,
-                SUM(c.votes) AS total_party_votes,
-                COUNT(DISTINCT con.constituency_id) AS county_total_seats
-            FROM
-                CANDIDATE_TABLE c
-            JOIN
-                PARTY_TABLE p ON c.party_id = p.party_id
-            JOIN
-                CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
-            GROUP BY
-                c.party_id, c.county_id
-        """)
+                    SELECT
+                        p.name AS party_name,
+                        c.county_id,
+                        SUM(c.votes) AS total_party_votes,
+                        (SELECT COUNT(DISTINCT constituency_id) FROM CONSTITUENCY_TABLE WHERE county_id = c.county_id) AS county_total_seats
+                    FROM
+                        CANDIDATE_TABLE c
+                    JOIN
+                        PARTY_TABLE p ON c.party_id = p.party_id
+                    JOIN
+                        CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
+                    GROUP BY
+                        c.party_id, c.county_id
+                """)
 
         party_results_by_county = cur.fetchall()
 
@@ -559,22 +574,8 @@ def proportional_representation_by_county():
                 seats_in_county = proportion_in_county * county_total_seats
 
                 # Update the total seats for the party
-                party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_county
+                party_total_seats[party_name] = round(party_total_seats.get(party_name, 0) + seats_in_county)
 
-        # Check if the total allocated seats exceed the limit (650)
-        total_allocated_seats = sum(round(seats) for seats in party_total_seats.values())
-
-        # If total allocated seats exceed the limit, scale down the seats proportionally
-        if total_allocated_seats > 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: math.ceil(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
-
-        # scale it up if it is less than 650
-        elif total_allocated_seats < 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: round(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
 
         # Calculate total votes and total seats for the entire election
         total_votes = sum([row[2] for row in party_results_by_county])
@@ -614,6 +615,7 @@ def proportional_representation_by_region():
         # Get the total number of seats
         cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
         total_seats = cur.fetchone()[0]
+
 
         # Fetch party results grouped by region
         cur.execute("""
@@ -789,7 +791,402 @@ def proportional_representation_by_country():
         conn.commit()
 
 
+def largest_remainder_by_county():
+    with sqlite3.connect('database.db') as conn:
 
+        cur = conn.cursor()
+
+        # Get the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by county
+        cur.execute("""
+                    SELECT
+                        p.name AS party_name,
+                        c.county_id,
+                        SUM(c.votes) AS total_party_votes,
+                        (SELECT COUNT(DISTINCT constituency_id) FROM CONSTITUENCY_TABLE WHERE county_id = c.county_id) AS county_total_seats
+                    FROM
+                        CANDIDATE_TABLE c
+                    JOIN
+                        PARTY_TABLE p ON c.party_id = p.party_id
+                    JOIN
+                        CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
+                    GROUP BY
+                        c.party_id, c.county_id
+                """)
+
+        party_results_by_county = cur.fetchall()
+
+        # Initialize a dictionary to store the total seats for each party
+        party_total_seats = {}
+
+        # Iterate over each county
+
+        for county_id in set(row[1] for row in party_results_by_county):
+
+
+            # Calculate the total seats in the county based on the number of constituencies in the county
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CONSTITUENCY_TABLE WHERE county_id = ?", (county_id,))
+            county_total_seats = cur.fetchone()[0]
+            # Calculate the total votes in the county
+            county_total_votes = sum(row[2] for row in party_results_by_county if row[1] == county_id)
+
+            # get the county name
+            cur.execute("SELECT name FROM COUNTY_TABLE WHERE county_id = ?", (county_id,))
+            county_name = cur.fetchone()[0]
+
+            hare_quota = county_total_votes / county_total_seats
+
+            # iterate over each party in the county
+
+            seats_awarded = 0
+
+            for party_name in set(row[0] for row in party_results_by_county if row[1] == county_id):
+                # get the total votes for the party in the county
+                party_total_votes = sum(row[2] for row in party_results_by_county if row[0] == party_name and row[1] == county_id)
+
+                # calculate the seats for the party in the county
+                party_total_seats[party_name] = math.floor(party_total_seats.get(party_name, 0) + (party_total_votes / hare_quota))
+
+                # store the remainder of the division and the party name in a list
+                remainder = party_total_votes % hare_quota
+                remainder_list = [remainder, party_name]
+
+                # add the seats awarded to the total seats awarded
+                seats_awarded += math.floor(party_total_votes / hare_quota)
+
+            # sort the party_total_seats dictionary by seats in descending order
+            sorted_seats = sorted(party_total_seats.items(), key=lambda x: x[1], reverse=True)
+
+            while seats_awarded < county_total_seats:
+                # loop through the sorted_seats list and add 1 seat to each party until the total seats awarded is equal to the total seats in the county
+                for party_name, seats in sorted_seats:
+                    if seats_awarded < county_total_seats:
+                        party_total_seats[party_name] += 1
+                        seats_awarded += 1
+                    else:
+                        break
+
+            # insert the id, county name and total seats into the debug table
+            cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (county_id, county_name, county_total_seats, seats_awarded))
+
+        # Initialize a variable to store the total seats across all counties
+        all_seats = 0
+
+        # Iterate over each unique county
+        for county_id in set(row[1] for row in party_results_by_county):
+            # Fetch the total seats in the county from the database
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CONSTITUENCY_TABLE WHERE county_id = ?", (county_id,))
+            county_total_seats = cur.fetchone()[0]
+
+            # Add the total seats in the county to the total seats across all counties
+            all_seats += county_total_seats
+
+
+        # sum all seats awarded
+        allocated_seats =  sum(party_total_seats.values())
+
+        # insert the total seats for all counties into the debug table
+        cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (0, "All Counties", all_seats, allocated_seats))
+
+        # Calculate total votes and total seats for the entire election
+        total_votes = sum([row[2] for row in party_results_by_county])
+        total_seats = sum(party_total_seats.values())
+
+        # Insert the results into the database
+        election_system_name = "Largest Remainder by County"
+        total_valid_votes = total_votes
+        party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+
+        for party_name, seats in party_total_seats.items():
+            votes = sum([row[2] for row in party_results_by_county if row[0] == party_name])
+            vote_percentage = (votes / total_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(party_total_seats.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
+
+
+def largest_remainder_by_region():
+    with sqlite3.connect('database.db') as conn:
+
+        cur = conn.cursor()
+
+        # Calculate the total seats in the region based on the number of constituencies in the region
+        def get_constituencies_in_region(region_id):
+            with sqlite3.connect('database.db') as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE region_id = ?", (region_id,))
+                constituencies_in_region = cur.fetchone()[0]
+            return constituencies_in_region
+
+        # Get the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by region
+        cur.execute("""
+                    SELECT
+                        p.name AS party_name,
+                        r.region_id,
+                        SUM(c.votes) AS total_party_votes,
+                        COUNT(DISTINCT c.constituency_id) AS region_total_seats
+                    FROM
+                        CANDIDATE_TABLE c
+                    JOIN
+                        PARTY_TABLE p ON c.party_id = p.party_id
+                    JOIN
+                        REGION_TABLE r ON c.region_id = r.region_id
+                    GROUP BY
+                        c.party_id, r.region_id
+                """)
+
+        party_results_by_region = cur.fetchall()
+
+        # Initialize a dictionary to store the total seats for each party
+        party_total_seats = {}
+
+        # Iterate over each region
+        for region_id in set(row[1] for row in party_results_by_region):
+
+          
+            
+            region_total_seats = get_constituencies_in_region(region_id)
+            
+            # Calculate the total votes in the region
+            region_total_votes = sum(row[2] for row in party_results_by_region if row[1] == region_id)
+
+            # get the region name
+            cur.execute("SELECT name FROM REGION_TABLE WHERE region_id = ?", (region_id,))
+            region_name = cur.fetchone()[0]
+
+            hare_quota = region_total_votes / region_total_seats
+
+            # iterate over each party in the region
+            seats_awarded = 0
+
+            for party_name in set(row[0] for row in party_results_by_region if row[1] == region_id):
+                # get the total votes for the party in the region
+                party_total_votes = sum(row[2] for row in party_results_by_region if row[0] == party_name and row[1] == region_id)
+
+                # calculate the seats for the party in the region
+                party_total_seats[party_name] = math.floor(party_total_seats.get(party_name, 0) + (party_total_votes / hare_quota))
+
+                # store the remainder of the division and the party name in a list
+                remainder = party_total_votes % hare_quota
+                remainder_list = [remainder, party_name]
+
+                # add the seats awarded to the total seats awarded
+                seats_awarded += math.floor(party_total_votes / hare_quota)
+
+            # sort the party_total_seats dictionary by seats in descending order
+            sorted_seats = sorted(party_total_seats.items(), key=lambda x: x[1], reverse=True)
+
+            while seats_awarded < region_total_seats:
+                # loop through the sorted_seats list and add 1 seat to each party until the total seats awarded is equal to the total seats in the region
+                for party_name, seats in sorted_seats:
+                    if seats_awarded < region_total_seats:
+                        party_total_seats[party_name] += 1
+                        seats_awarded += 1
+                    else:
+                        break
+
+            # insert the id, region name and total seats into the debug table
+            cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (region_id, region_name, region_total_seats, seats_awarded))
+
+        # Initialize a variable to store the total seats across all regions
+        all_seats = 0
+
+        # Iterate over each unique region
+        for region_id in set(row[1] for row in party_results_by_region):
+            
+            region_total_seats = get_constituencies_in_region(region_id)
+
+
+            # Add the total seats in the region to the total seats across all regions
+            all_seats += region_total_seats
+
+        # sum all seats awarded
+        allocated_seats =  sum(party_total_seats.values())
+
+        # insert the total seats for all regions into the debug table
+        cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (0, "All Regions", all_seats, allocated_seats))
+
+        # Calculate total votes and total seats for the entire election
+        total_votes = sum([row[2] for row in party_results_by_region])
+        total_seats = sum(party_total_seats.values())
+
+        # Insert the results into the database
+        election_system_name = "Largest Remainder by Region"
+        total_valid_votes = total_votes
+        party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+
+        for party_name, seats in party_total_seats.items():
+            votes = sum([row[2] for row in party_results_by_region if row[0] == party_name])
+            vote_percentage = (votes / total_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(party_total_seats.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
+
+
+def largest_remainder_by_country():
+    with sqlite3.connect('database.db') as conn:
+
+        cur = conn.cursor()
+
+            # Calculate the total seats in the country based on the number of constituencies in the country
+        def get_constituencies_in_country(country_id):
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE country_id = ?", (country_id,))
+            constituencies_in_country = cur.fetchone()[0]
+            return constituencies_in_country
+
+        # Get the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by country
+        cur.execute("""
+                    SELECT
+                        p.name AS party_name,
+                        c.country_id,
+                        SUM(c.votes) AS total_party_votes,
+                        COUNT(DISTINCT c.constituency_id) AS country_total_seats
+                    FROM
+                        CANDIDATE_TABLE c
+                    JOIN
+                        PARTY_TABLE p ON c.party_id = p.party_id
+                    JOIN
+                        COUNTRY_TABLE r ON c.country_id = r.country_id
+                    GROUP BY
+                        c.party_id, r.country_id
+                """)
+
+        party_results_by_country = cur.fetchall()
+
+        # Initialize a dictionary to store the total seats for each party
+        party_total_seats = {}
+
+        # Iterate over each country
+        for country_id in set(row[1] for row in party_results_by_country):
+
+          
+            
+            country_total_seats = get_constituencies_in_country(country_id)
+            
+            # Calculate the total votes in the country
+            country_total_votes = sum(row[2] for row in party_results_by_country if row[1] == country_id)
+
+            # get the country name
+            cur.execute("SELECT name FROM COUNTRY_TABLE WHERE country_id = ?", (country_id,))
+            country_name = cur.fetchone()[0]
+
+            hare_quota = country_total_votes / country_total_seats
+
+            # iterate over each party in the country
+            seats_awarded = 0
+
+            for party_name in set(row[0] for row in party_results_by_country if row[1] == country_id):
+                # get the total votes for the party in the country
+                party_total_votes = sum(row[2] for row in party_results_by_country if row[0] == party_name and row[1] == country_id)
+
+                # calculate the seats for the party in the country
+                party_total_seats[party_name] = math.floor(party_total_seats.get(party_name, 0) + (party_total_votes / hare_quota))
+
+                # store the remainder of the division and the party name in a list
+                remainder = party_total_votes % hare_quota
+                remainder_list = [remainder, party_name]
+
+                # add the seats awarded to the total seats awarded
+                seats_awarded += math.floor(party_total_votes / hare_quota)
+
+            # sort the party_total_seats dictionary by seats in descending order
+            sorted_seats = sorted(party_total_seats.items(), key=lambda x: x[1], reverse=True)
+
+            while seats_awarded < country_total_seats:
+                # loop through the sorted_seats list and add 1 seat to each party until the total seats awarded is equal to the total seats in the country
+                for party_name, seats in sorted_seats:
+                    if seats_awarded < country_total_seats:
+                        party_total_seats[party_name] += 1
+                        seats_awarded += 1
+                    else:
+                        break
+
+            # insert the id, country name and total seats into the debug table
+            cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (country_id, country_name, country_total_seats, seats_awarded))
+
+        # Initialize a variable to store the total seats across all country
+        all_seats = 0
+
+        # Iterate over each unique country
+        for country_id in set(row[1] for row in party_results_by_country):
+            
+            country_total_seats = get_constituencies_in_country(country_id)
+
+
+            # Add the total seats in the country to the total seats across all countries
+            all_seats += country_total_seats
+
+        # sum all seats awarded
+        allocated_seats =  sum(party_total_seats.values())
+
+        # insert the total seats for all regions into the debug table
+        cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (0, "All Countries", all_seats, allocated_seats))
+
+        # Calculate total votes and total seats for the entire election
+        total_votes = sum([row[2] for row in party_results_by_country])
+        total_seats = sum(party_total_seats.values())
+
+        # Insert the results into the database
+        election_system_name = "Largest Remainder by Country"
+        total_valid_votes = total_votes
+        party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+
+        for party_name, seats in party_total_seats.items():
+            votes = sum([row[2] for row in party_results_by_country if row[0] == party_name])
+            vote_percentage = (votes / total_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(party_total_seats.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
 
 
 
@@ -799,6 +1196,10 @@ proportional_representation_with_threshold()
 proportional_representation_by_county()
 proportional_representation_by_region()
 proportional_representation_by_country()
+largest_remainder_by_county()
+largest_remainder_by_region()
+largest_remainder_by_country()
+
 
 
 # Route for the "index" page
@@ -831,7 +1232,7 @@ def get_results_from_table(election_system_name):
         
         
         cur = conn.cursor()
-        cur.execute("SELECT * FROM RESULTS_TABLE WHERE election_system_name = ?", (election_system_name,))
+        cur.execute("SELECT * FROM RESULTS_TABLE WHERE election_system_name = ? ORDER BY name ASC", (election_system_name,))
         rows = cur.fetchall()
 
         
