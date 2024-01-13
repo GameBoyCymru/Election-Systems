@@ -387,7 +387,6 @@ def proportional_representation_with_threshold():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
-        disqualified_votes = 0  # To store the votes of disqualified votes
         # Calculate and display the total amount of votes
         cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
         total_votes = cur.fetchone()[0]
@@ -496,6 +495,7 @@ def proportional_representation_with_threshold():
 
 def proportional_representation_by_county():
     with sqlite3.connect('database.db') as conn:
+
         cur = conn.cursor()
 
         # Get the total number of seats
@@ -570,11 +570,113 @@ def proportional_representation_by_county():
 
         conn.commit()
 
-        
+
+def largest_remainder_by_county():
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+        # Fetch the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by county
+        cur.execute("""
+            SELECT
+                p.name AS party_name,
+                c.county_id,
+                SUM(c.votes) AS total_party_votes,
+                COUNT(DISTINCT c.constituency_id) AS county_total_seats
+            FROM
+                CANDIDATE_TABLE c
+            JOIN
+                PARTY_TABLE p ON c.party_id = p.party_id
+            JOIN
+                CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
+            GROUP BY
+                c.party_id, c.county_id
+        """)
+
+        party_results_by_county = cur.fetchall()
+
+        # Initialize dictionaries to store results
+        party_total_seats = {}
+        party_remainders = {}
+
+        # Iterate over the results for each party and county
+        for party_name, county_id, total_party_votes, county_total_seats in party_results_by_county:
+
+            # Calculate the Hare Quota by dividing the total votes for the county by the total county seats for the county
+
+            total_votes_in_county = sum(row[2] for row in party_results_by_county if row[1] == county_id)
+            hare_quota = total_votes_in_county / county_total_seats
+
+            # Calculate the initial seats without considering remainders
+            initial_seats = math.floor(total_party_votes / hare_quota)
+
+            # Calculate the remainder
+            remainder = total_party_votes % hare_quota
+
+            # Store the party's remainder
+            party_remainders[party_name] = remainder
+
+            # Initialize the total seats for the party in all counties
+            party_total_seats[party_name] = party_total_seats.get(party_name, 0)
+
+            # Add the initial seats to the total seats for the party
+            party_total_seats[party_name] += initial_seats
+
+        # Sort parties by remainder in descending order
+        sorted_parties_by_remainder = sorted(party_remainders.items(), key=lambda x: x[1], reverse=True)
+
+        # Allocate remaining seats to parties based on remainders
+        for party_name, remainder in sorted_parties_by_remainder:
+            # Check if the party has already reached the county total seats
+            if party_total_seats[party_name] < party_results_by_county[0][3]:
+                # Allocate an additional seat to the party
+                party_total_seats[party_name] += 1
+
+        # Calculate the total seats for each party across all counties
+        total_seats_by_party = {party_name: 0 for party_name in party_total_seats.keys()}
+
+        for party_name, seats in party_total_seats.items():
+            total_seats_by_party[party_name] += seats
+
+        # Insert the results into the database
+        election_system_name = "Largest Remainder by County"
+        total_valid_votes = sum([row[2] for row in party_results_by_county])
+        party_with_most_seats = max(total_seats_by_party, key=total_seats_by_party.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+
+        for party_name, seats in total_seats_by_party.items():
+            votes = sum([row[2] for row in party_results_by_county if row[0] == party_name])
+            vote_percentage = (votes / total_valid_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(total_seats_by_party.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
+
+
+
+
+
+
 first_past_the_post()
 simple_proportional_representation()
 proportional_representation_with_threshold()
 proportional_representation_by_county()
+largest_remainder_by_county()
+
 
 # Route for the "index" page
 @app.route('/')
