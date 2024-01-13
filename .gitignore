@@ -3,3 +3,4 @@
 identifier.sqlite
 .vscode
 __pycache__/electoral_system.cpython-311.pyc
+*.pyc
