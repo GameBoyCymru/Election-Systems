@@ -330,7 +330,7 @@ def simple_proportional_representation():
         seats_results = {}
         for party_name, total_votes_party in party_results:
             if total_votes_party > 0:
-                seat_count = int((total_votes_party / total_votes) * total_seats)
+                seat_count = (total_votes_party / total_votes) * total_seats
                 seats_results[party_name] = seat_count
             else:
                 seats_results[party_name] = 0
@@ -339,8 +339,20 @@ def simple_proportional_representation():
         for party_name, _ in party_results:
             seats_results.setdefault(party_name, 0)
 
+        # If total allocated seats exceed the limit, scale down the seats proportionally
+        total_allocated_seats = sum(seats_results.values())
+        if total_allocated_seats > 650:
+            scale_factor = 650 / total_allocated_seats
+            seats_results = {party_name: math.ceil(seats * scale_factor) for party_name, seats in seats_results.items()}
+        # scale it up if it is less than 650
+        elif total_allocated_seats < 650:
+            scale_factor = 650 / total_allocated_seats
+            seats_results = {party_name: round(seats * scale_factor) for party_name, seats in seats_results.items()}
 
-    
+
+
+
+
         # Sort the seats_results dictionary by seats in descending order
         sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
     
@@ -435,6 +447,17 @@ def proportional_representation_with_threshold():
                 # Use math.floor to round down to the nearest whole number
                 seat_count = math.floor((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
                 seats_results[party_name] = seat_count
+
+        # If total allocated seats exceed the limit, scale down the seats proportionally
+        total_allocated_seats = sum(seats_results.values())
+        if total_allocated_seats > 650:
+            scale_factor = 650 / total_allocated_seats
+            seats_results = {party_name: math.ceil(seats * scale_factor) for party_name, seats in seats_results.items()}
+        # scale it up if it is less than 650
+        elif total_allocated_seats < 650:
+            scale_factor = 650 / total_allocated_seats
+            seats_results = {party_name: round(seats * scale_factor) for party_name, seats in seats_results.items()}
+
 
 
         # Add parties without seats to the seats_results with default value 0
