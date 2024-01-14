@@ -16,7 +16,7 @@ cur = conn.cursor()
         
 cur.execute("DROP TABLE IF EXISTS GENDER_TABLE")
 cur.execute("""CREATE TABLE IF NOT EXISTS GENDER_TABLE (
-                    gender_id INTEGER NOT NULL PRIMARY KEY,
+                    gender_id varchar(5) NOT NULL PRIMARY KEY,
                     gender_type VARCHAR(25) NOT NULL
                 );""")
 
@@ -25,7 +25,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS GENDER_TABLE (
 cur.execute("DROP TABLE IF EXISTS PARTY_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS PARTY_TABLE (
-            party_id INTEGER NOT NULL PRIMARY KEY,
+            party_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL
         )""")
 
@@ -34,16 +34,16 @@ cur.execute("""CREATE TABLE IF NOT EXISTS PARTY_TABLE (
 cur.execute("DROP TABLE IF EXISTS CANDIDATE_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS CANDIDATE_TABLE (
-            candidate_id INTEGER NOT NULL PRIMARY KEY,
+            candidate_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
-            gender_id INTEGER NOT NULL,
+            gender_id varchar(5) NOT NULL,
             sitting VARCHAR(8) NOT NULL,
             votes INTEGER NOT NULL,
-            party_id INTEGER NOT NULL,
-            constituency_id INTEGER NOT NULL,
-            county_id INTEGER NOT NULL,
-            region_id INTEGER NOT NULL,
-            country_id INTEGER NOT NULL,
+            party_id varchar(5) NOT NULL,
+            constituency_id varchar(5) NOT NULL,
+            county_id varchar(5) NOT NULL,
+            region_id varchar(5) NOT NULL,
+            country_id varchar(5) NOT NULL,
             FOREIGN KEY (gender_id) REFERENCES GENDER_TABLE(gender_id),
             FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id),
             FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id),
@@ -57,7 +57,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS CANDIDATE_TABLE (
 cur.execute("DROP TABLE IF EXISTS REGION_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS REGION_TABLE (
-            region_id INTEGER NOT NULL PRIMARY KEY,
+            region_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL
         )""")
 
@@ -66,7 +66,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS REGION_TABLE (
 cur.execute("DROP TABLE IF EXISTS COUNTRY_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS COUNTRY_TABLE (
-            country_id INTEGER NOT NULL PRIMARY KEY,
+            country_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL
         )""")
 
@@ -75,10 +75,10 @@ cur.execute("""CREATE TABLE IF NOT EXISTS COUNTRY_TABLE (
 cur.execute("DROP TABLE IF EXISTS COUNTY_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS COUNTY_TABLE (
-            county_id INTEGER NOT NULL PRIMARY KEY,
+            county_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
-            region_id INTEGER NOT NULL,
-            country_id INTEGER NOT NULL,
+            region_id varchar(5) NOT NULL,
+            country_id varchar(5) NOT NULL,
             FOREIGN KEY (region_id) REFERENCES REGION_TABLE(region_id),
             FOREIGN KEY (country_id) REFERENCES REGION_TABLE(country_id)
         )""")
@@ -88,9 +88,9 @@ cur.execute("""CREATE TABLE IF NOT EXISTS COUNTY_TABLE (
 cur.execute("DROP TABLE IF EXISTS CONSTITUENCY_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS CONSTITUENCY_TABLE (
-            constituency_id INTEGER NOT NULL PRIMARY KEY,
+            constituency_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
-            county_id INTEGER NOT NULL,
+            county_id varchar(5) NOT NULL,
             type VARCHAR(8) NOT NULL,
             FOREIGN KEY (county_id) REFERENCES COUNTY_TABLE(county_id)
         )""")
@@ -100,8 +100,8 @@ cur.execute("""CREATE TABLE IF NOT EXISTS CONSTITUENCY_TABLE (
 cur.execute("DROP TABLE IF EXISTS PARTYCONSTITUENCY_TABLE")
 #runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS PARTYCONSTITUENCY_TABLE (
-        party_id INTEGER NOT NULL,
-        constituency_id INTEGER NOT NULL,
+        party_id varchar(5) NOT NULL,
+        constituency_id varchar(5) NOT NULL,
         PRIMARY KEY (party_id, constituency_id),
         FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id),
         FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id)
@@ -114,7 +114,6 @@ cur.execute("DROP TABLE IF EXISTS RESULTS_TABLE")
 #runs create table script
 cur.execute("""
             CREATE TABLE RESULTS_TABLE (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 election_system_name TEXT NOT NULL,
                 name TEXT NOT NULL,
                 votes INTEGER,
@@ -135,7 +134,7 @@ cur.execute("DROP TABLE IF EXISTS DEBUG_TABLE")
 #runs create table script
 cur.execute("""
             CREATE TABLE DEBUG_TABLE (
-                id integer,
+                id varchar(5),
                 name TEXT,
                 total_seats INTEGER,
                 seats_awarded INTEGER
@@ -940,10 +939,10 @@ def get_results_from_table(election_system_name):
         
         
         # Calculate the total number of seats from the seats awarded
-        total_seats = sum(row[4] for row in rows)
+        total_seats = sum(row[3] for row in rows)
 
         # Find the seat count of the party with the most seats
-        most_seats = max(row[4] for row in rows)
+        most_seats = max(row[3] for row in rows)
 
     return rows, total_votes, total_seats, most_seats
 
