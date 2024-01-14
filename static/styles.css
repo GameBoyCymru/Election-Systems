@@ -26,6 +26,7 @@ a {
 }
 
 nav {
+    font-size: 1.6em;
     margin: 10px auto;
     display: flex;
     justify-content: space-between;
