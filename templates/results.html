@@ -24,12 +24,12 @@
         </section>
 
         <section class="stats">
-            <p><strong>Party with Most Seats: {{ results[0][11] }} ({{ most_seats }} Seats)</strong></p>
-            <p><strong>Is Different From Actual Winner: {{ results[0][9] }}</strong></p>
+            <p>Party with Most Seats: <strong>{{ results[0][11] }}</strong> ({{ most_seats }} Seats)</p>
+            <p>Is Different From Actual Winner: <strong>{{ results[0][9] }}</strong></p>
             {% if most_seats > ((total_seats/2) + 1) %}
-                <p><strong>Enough to win an election: Yes</strong></p>
+                <p>Enough to win an election: <strong>Yes</strong></p>
             {% else %}
-                <p><strong>Enough to win an election: No</strong></p>
+                <p>Enough to win an election: <strong>No</strong></p>
             {% endif %}
         </section>
     </section>
