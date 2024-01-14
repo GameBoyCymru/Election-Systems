@@ -52,7 +52,7 @@ main {
 }
 
 .menu-button {
-    display: block;  
+    display: block;
     border: solid 2px var(--tertiary-color);
     border-radius: 10px;
     background-color: var(--primary-color);
@@ -90,7 +90,7 @@ main {
     width: fit-content;
     text-align: center;
     margin: 10px auto;
-    padding: 20px ;
+    padding: 20px;
     gap: 10px;
 }
 
@@ -110,6 +110,14 @@ th, td {
     border: 1px solid var(--tertiary-color);
     padding: 10px;
     text-align: left;
+}
+
+td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+
 }
 
 /*hover effect on tr*/

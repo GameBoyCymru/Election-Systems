@@ -383,7 +383,7 @@ def simple_proportional_representation():
             
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
         election_system_name = "Proportional Representation (All Seats)"
-        total_valid_votes=total_votes - disqualified_votes
+        total_valid_votes = total_votes
         party_with_most_seats = max(seats_results, key=seats_results.get)
 
 
