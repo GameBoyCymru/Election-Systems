@@ -12,6 +12,31 @@
     --text-color: #E2DDF5;
 }
 
+html {
+    scroll-behavior: smooth;
+    /* smooth scrolling */
+}
+
+
+/* CSS for the Scrollbar */
+
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background-color: rgba(9, 18, 31, 1);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #8d8d8d;
+    border-radius: 25px;
+    border: none;
+}
+
 body {
     font-family: 'Roboto', sans-serif;
     font-size: 16px;
@@ -117,8 +142,12 @@ td {
     overflow: hidden;
     text-overflow: ellipsis;
     box-sizing: border-box;
-
 }
+
+tr {
+    transition: background-color 0.3s;
+    }
+
 
 /*hover effect on tr*/
 tr:hover {
