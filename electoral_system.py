@@ -391,7 +391,7 @@ def simple_proportional_representation():
             seat_differences_from_winner[party_name] = difference
             
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        election_system_name = "Simple Proportional Representation"
+        election_system_name = "Proportional Representation (All Seats)"
         total_valid_votes=total_votes - disqualified_votes
         party_with_most_seats = max(seats_results, key=seats_results.get)
 
@@ -513,7 +513,7 @@ def proportional_representation_with_threshold():
             seat_differences_from_winner[party_name] = difference
     
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
-        election_system_name = "Simple Proportional Representation with 5% Threshold"
+        election_system_name = "Proportional Representation with 5% Threshold (All Seats)"
         total_valid_votes=total_votes - disqualified_votes
         party_with_most_seats = max(seats_results, key=seats_results.get)
 
