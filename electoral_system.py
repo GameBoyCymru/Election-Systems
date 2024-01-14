@@ -925,9 +925,10 @@ def custom_by_criteria(criteria_name, criteria_id):
 
             # Repeat until all seats are allocated
             while sum(party['seats'] for party in parties) < total_seats_for_criterion:
-                # For each party, calculate the quotient
+                # For each party, calculate the quotient but make it so parties with lower votes have a higher quotient
                 for party in parties:
-                    party['quot'] = party['votes'] / (5+3*party['seats'] + 1)
+                    party['quot'] = (party['votes'] / (2*party['seats'] + 1)) * -1
+
 
                 # Allocate a seat to the party with the highest quotient
                 max_quot_party = max(parties, key=lambda party: party['quot'])
