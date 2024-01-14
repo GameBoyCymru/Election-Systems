@@ -562,13 +562,23 @@ def proportional_representation_by_county():
         # Initialize a dictionary to store the total seats for each party
         party_total_seats = {}
 
-        # Iterate over the results for each party and county
-        for party_name, county_id, total_party_votes, county_total_seats in party_results_by_county:
-            # Calculate the proportion of votes for the party in the county
-            total_votes_in_county = sum(row[2] for row in party_results_by_county if row[1] == county_id)
 
-            if total_votes_in_county > 0:
-                proportion_in_county = total_party_votes / total_votes_in_county
+        # Iterate over each county
+
+        for county_id in set(row[1] for row in party_results_by_county):
+            # Calculate the total seats in the county based on the number of constituencies in the county
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CONSTITUENCY_TABLE WHERE county_id = ?", (county_id,))
+            county_total_seats = cur.fetchone()[0]
+            # Calculate the total votes in the county
+            county_total_votes = sum(row[2] for row in party_results_by_county if row[1] == county_id)
+
+            for party_name in set(row[0] for row in party_results_by_county if row[1] == county_id):
+                # get the total votes for the party in the county
+                party_total_votes = sum(
+                    row[2] for row in party_results_by_county if row[0] == party_name and row[1] == county_id)
+
+                # Calculate the proportion of seats for the party in the county
+                proportion_in_county = party_total_votes / county_total_votes
 
                 # Calculate the seats for the party in the county (rounded to the nearest integer)
                 seats_in_county = proportion_in_county * county_total_seats
@@ -639,34 +649,28 @@ def proportional_representation_by_region():
         # Initialize a dictionary to store the total seats for each party
         party_total_seats = {}
 
-        # Iterate over the results for each party and region
-        for party_name, region_id, total_party_votes, region_total_seats in party_results_by_region:
-            # Calculate the proportion of votes for the party in the region
-            total_votes_in_region = sum(row[2] for row in party_results_by_region if row[1] == region_id)
+        # Iterate over each county
 
-            if total_votes_in_region > 0:
-                proportion_in_region = total_party_votes / total_votes_in_region
+        for region_id in set(row[1] for row in party_results_by_region):
+            # Calculate the total seats in the county based on the number of constituencies in the county
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE region_id = ?", (region_id,))
+            region_total_seats = cur.fetchone()[0]
+            # Calculate the total votes in the county
+            region_total_votes = sum(row[2] for row in party_results_by_region if row[1] == region_id)
 
-                # Calculate the seats for the party in the region (rounded to the nearest integer)
+            for party_name in set(row[0] for row in party_results_by_region if row[1] == region_id):
+                # get the total votes for the party in the county
+                party_total_votes = sum(
+                    row[2] for row in party_results_by_region if row[0] == party_name and row[1] == region_id)
+
+                # Calculate the proportion of seats for the party in the county
+                proportion_in_region = party_total_votes / region_total_votes
+
+                # Calculate the seats for the party in the county (rounded to the nearest integer)
                 seats_in_region = proportion_in_region * region_total_seats
 
                 # Update the total seats for the party
-                party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_region
-
-                # Check if the total allocated seats exceed the limit (650)
-                total_allocated_seats = sum(round(seats) for seats in party_total_seats.values())
-
-        # If total allocated seats exceed the limit, scale down the seats proportionally
-        if total_allocated_seats > 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: math.ceil(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
-
-        # scale it up if it is less than 650
-        elif total_allocated_seats < 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: round(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
+                party_total_seats[party_name] = round(party_total_seats.get(party_name, 0) + seats_in_region)
 
         # Calculate total votes and total seats for the entire election
         total_votes = sum([row[2] for row in party_results_by_region])
@@ -729,35 +733,28 @@ def proportional_representation_by_country():
         # Initialize a dictionary to store the total seats for each party
         party_total_seats = {}
 
-        # Iterate over the results for each party and country
-        for party_name, country_id, total_party_votes, country_total_seats in party_results_by_country:
-            # Calculate the proportion of votes for the party in the country
-            total_votes_in_country = sum(row[2] for row in party_results_by_country if row[1] == country_id)
+        # Iterate over each country
 
-            if total_votes_in_country > 0:
-                proportion_in_country = total_party_votes / total_votes_in_country
+        for country_id in set(row[1] for row in party_results_by_country):
+            # Calculate the total seats in the county based on the number of constituencies in the country
+            cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE country_id = ?", (country_id,))
+            country_total_seats = cur.fetchone()[0]
+            # Calculate the total votes in the county
+            country_total_votes = sum(row[2] for row in party_results_by_country if row[1] == country_id)
 
+            for party_name in set(row[0] for row in party_results_by_country if row[1] == country_id):
+                # get the total votes for the party in the county
+                party_total_votes = sum(
+                    row[2] for row in party_results_by_country if row[0] == party_name and row[1] == country_id)
 
-                # Calculate the seats for the party in the country (rounded to the nearest integer)
+                # Calculate the proportion of seats for the party in the county
+                proportion_in_country = party_total_votes / country_total_votes
+
+                # Calculate the seats for the party in the county (rounded to the nearest integer)
                 seats_in_country = proportion_in_country * country_total_seats
 
                 # Update the total seats for the party
-                party_total_seats[party_name] = party_total_seats.get(party_name, 0) + seats_in_country
-
-        # Check if the total allocated seats exceed the limit (650)
-        total_allocated_seats = sum(round(seats) for seats in party_total_seats.values())
-
-        # If total allocated seats exceed the limit, scale down the seats proportionally
-        if total_allocated_seats > 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: math.ceil(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
-
-        # scale it up if it is less than 650
-        elif total_allocated_seats < 650:
-            scale_factor = 650 / total_allocated_seats
-            party_total_seats = {party_name: round(seats * scale_factor) for party_name, seats in
-                                 party_total_seats.items()}
+                party_total_seats[party_name] = round(party_total_seats.get(party_name, 0) + seats_in_country)
 
 
 
