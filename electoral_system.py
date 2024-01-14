@@ -114,32 +114,20 @@ cur.execute("DROP TABLE IF EXISTS RESULTS_TABLE")
 #runs create table script
 cur.execute("""
             CREATE TABLE RESULTS_TABLE (
-                election_system_name TEXT NOT NULL,
-                name TEXT NOT NULL,
+                election_system_name VARCHAR(50) NOT NULL,
+                name VARCHAR(50) NOT NULL,
                 votes INTEGER,
                 seats INTEGER,
                 vote_percentages REAL,
                 seat_percentages REAL,
                 vote_seat_differences REAL,
                 seat_differences_from_winner INTEGER,
-                is_different_from_winner TEXT,
+                is_different_from_winner VARCHAR(3),
                 total_valid_votes INTEGER,
-                party_with_most_seats TEXT
+                party_with_most_seats VARCHAR(50)
             )
         """)
 
-
-#drops table RESULTS_TABLE if exists
-cur.execute("DROP TABLE IF EXISTS DEBUG_TABLE")
-#runs create table script
-cur.execute("""
-            CREATE TABLE DEBUG_TABLE (
-                id varchar(5),
-                name TEXT,
-                total_seats INTEGER,
-                seats_awarded INTEGER
-            )
-        """)
 
 with open('data/gender_data.csv', newline='') as csvfile:
     gender_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
@@ -747,8 +735,6 @@ def dhont_by_criteria(criteria_name, criteria_id):
             for party in parties:
                 party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
 
-            # insert the id, criterion name, and total seats into the debug table
-            cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (criterion_value, criterion_name, total_seats_for_criterion, 0))
 
         # Initialize a variable to store the total seats across all criteria
         all_seats = 0
@@ -765,8 +751,6 @@ def dhont_by_criteria(criteria_name, criteria_id):
         # Sum all seats awarded
         allocated_seats =  sum(party_total_seats.values())
 
-        # insert the total seats for all criteria into the debug table
-        cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (0, f"All {criteria_name}s", all_seats, allocated_seats))
 
         # Calculate total votes and total seats for the entire election
         total_votes = sum([row[2] for row in party_results])
@@ -852,8 +836,6 @@ def webster_by_criteria(criteria_name, criteria_id):
             for party in parties:
                 party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
 
-            # insert the id, criterion name, and total seats into the debug table
-            cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (criterion_value, criterion_name, total_seats_for_criterion, 0))
 
         # Initialize a variable to store the total seats across all criteria
         all_seats = 0
@@ -870,8 +852,6 @@ def webster_by_criteria(criteria_name, criteria_id):
         # Sum all seats awarded
         allocated_seats =  sum(party_total_seats.values())
 
-        # insert the total seats for all criteria into the debug table
-        cur.execute("INSERT INTO DEBUG_TABLE (id, name, total_seats, seats_awarded) VALUES (?, ?, ?, ?)", (0, f"All {criteria_name}s", all_seats, allocated_seats))
 
         # Calculate total votes and total seats for the entire election
         total_votes = sum([row[2] for row in party_results])
@@ -902,6 +882,108 @@ def webster_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+def custom_by_criteria(criteria_name, criteria_id):
+    with (sqlite3.connect('database.db') as conn):
+        cur = conn.cursor()
+
+        # Get the total number of seats
+        cur.execute("SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE")
+        total_seats = cur.fetchone()[0]
+
+        # Fetch party results grouped by the specified criteria
+        cur.execute(f"""
+                    SELECT
+                        p.name AS party_name,
+                        c.{criteria_id},
+                        SUM(c.votes) AS total_party_votes,
+                        COUNT(DISTINCT c.constituency_id) AS total_seats
+                    FROM
+                        CANDIDATE_TABLE c
+                    JOIN
+                        PARTY_TABLE p ON c.party_id = p.party_id
+                    GROUP BY
+                        c.party_id, c.{criteria_id}
+                """)
+
+        party_results = cur.fetchall()
+
+        # Initialize a dictionary to store the total seats for each party
+        party_total_seats = {}
+
+        # Iterate over each criterion
+        for criterion_value in set(row[1] for row in party_results):
+
+            # Calculate the total seats based on the number of constituencies for the current criterion
+            cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
+            total_seats_for_criterion = cur.fetchone()[0]
+
+            # Get the name of the criterion (e.g., county_name, region_name, country_name)
+            criterion_name = criterion_value  # Assuming criterion_value itself is the name
+
+            # Initialize a list of parties, each with their total votes and zero seats
+            parties = [{'name': party_name, 'votes': sum(row[2] for row in party_results if row[0] == party_name and row[1] == criterion_value), 'seats': 0} for party_name in set(row[0] for row in party_results if row[1] == criterion_value)]
+
+            # Repeat until all seats are allocated
+            while sum(party['seats'] for party in parties) < total_seats_for_criterion:
+                # For each party, calculate the quotient
+                for party in parties:
+                    party['quot'] = party['votes'] / (5+3*party['seats'] + 1)
+
+                # Allocate a seat to the party with the highest quotient
+                max_quot_party = max(parties, key=lambda party: party['quot'])
+                max_quot_party['seats'] += 1
+
+            # Update the total seats for each party
+            for party in parties:
+                party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
+
+
+        # Initialize a variable to store the total seats across all criteria
+        all_seats = 0
+
+        # Iterate over each unique criterion
+        for criterion_value in set(row[1] for row in party_results):
+            # Fetch the total seats for the criterion from the database
+            cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
+            total_seats_for_criterion = cur.fetchone()[0]
+
+            # Add the total seats for the criterion to the total seats across all criteria
+            all_seats += total_seats_for_criterion
+
+        # Sum all seats awarded
+        allocated_seats =  sum(party_total_seats.values())
+
+
+        # Calculate total votes and total seats for the entire election
+        total_votes = sum([row[2] for row in party_results])
+        total_seats = sum(party_total_seats.values())
+
+        # Insert the results into the database
+        election_system_name = f"Custom by {criteria_name}"
+        total_valid_votes = total_votes
+        party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
+        is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
+
+        for party_name, seats in party_total_seats.items():
+            votes = sum([row[2] for row in party_results if row[0] == party_name])
+            vote_percentage = (votes / total_votes) * 100
+            seat_percentage = (seats / total_seats) * 100
+            vote_seat_difference = round(vote_percentage - seat_percentage, 2)
+            seat_difference_from_winner = seats - max(party_total_seats.values())
+
+            # Insert into the RESULTS_TABLE
+            cur.execute("""
+                INSERT INTO RESULTS_TABLE
+                (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
+                 seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (election_system_name, party_name, votes, seats, vote_percentage, seat_percentage,
+                  vote_seat_difference, seat_difference_from_winner, is_different_from_winner, total_valid_votes,
+                  party_with_most_seats))
+
+        conn.commit()
+
+
 first_past_the_post()
 simple_proportional_representation()
 proportional_representation_with_threshold()
@@ -917,6 +999,9 @@ dhont_by_criteria("Country", "country_id")
 webster_by_criteria("County", "county_id")
 webster_by_criteria("Region", "region_id")
 webster_by_criteria("Country", "country_id")
+custom_by_criteria("County", "county_id")
+custom_by_criteria("Region", "region_id")
+custom_by_criteria("Country", "country_id")
 
 
 # Route for the "index" page
