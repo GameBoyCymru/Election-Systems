@@ -62,8 +62,10 @@ nav {
 
 #main-nav {
     display: flex;
+    flex-direction: column;
     justify-content: center;
 }
+
 
 main {
     margin: 0 20px;
