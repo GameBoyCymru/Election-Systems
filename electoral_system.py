@@ -115,7 +115,6 @@ def first_past_the_post():
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
         election_system_name = "First Past the Post"
         total_valid_votes = total_votes
-        party_with_most_seats = max(seats_results, key=seats_results.get)
 
 
          # Insert the results into the database
@@ -219,7 +218,6 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
 
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
         total_valid_votes = total_votes - disqualified_votes
-        party_with_most_seats = max(seats_results, key=seats_results.get)
 
         # Insert the results into the database
         for party_name in sorted(seats_results.keys()):
