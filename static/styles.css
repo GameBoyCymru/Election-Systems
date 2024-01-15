@@ -7,9 +7,9 @@
 
 :root {
     --primary-color: #2F27CE;
-    --secondary-color: rgba(235, 233, 252, 0.82);
-    --background-color: #0F091E;
-    --tertiary-color: #DF4EE8;
+    --secondary-color: rgba(255, 36, 36, 0.82);
+    --background-color: #242424;
+    --tertiary-color: #ffffff;
     --text-color: #E2DDF5;
      line-height: 1.1;
 }
@@ -142,14 +142,14 @@ table {
     width: 80%;
     margin: 20px auto;
     border-collapse: collapse;
-    background-color: var(--secondary-color);
+    background-color: var(--tertiary-color);
     color: var(--background-color);
 }
 
 th {
     font-weight: bold;
     text-align: center;
-    background-color: var(--tertiary-color);
+    background-color: var(--secondary-color);
 }
 
 th, td {
@@ -173,7 +173,7 @@ tr {
 /*hover effect on tr*/
 tr:hover {
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: var(--tertiary-color);
     cursor: pointer;
     font-weight: bold;
 }
