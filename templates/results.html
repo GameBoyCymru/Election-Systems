@@ -9,8 +9,8 @@
 </head>
 <body>
     <nav>
-        <h1>System: {{ election_system_name }}</h1>
-        <a href="{{ url_for('index') }}"><button type="button" class="menu-button">Main Menu</button></a>
+        <h1>System: <br>{{ election_system_name }}</h1>
+        <a href="{{ url_for('index') }}"><button type="button" class="menu-button" id="return">Return</button></a>
     </nav>
 
     {% if results %}
