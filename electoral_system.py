@@ -2,20 +2,16 @@ from flask import Flask, render_template
 import sqlite3
 import math
 import random
+import os
 
 app = Flask(__name__) 
 
 
-# check if the database exists, if it does not, run the create tables script to create the database
+# delete the database if it exists
+if os.path.exists('database.db'):
+    os.remove('database.db')
 
-with sqlite3.connect('database.db') as conn:
-    cur = conn.cursor()
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='CANDIDATE_TABLE'")
-    if not cur.fetchone():
-        print("Database not found. Creating database...")
-        import create_tables
-    else:
-        print("Database found.")
+import create_tables
 
 
 def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, seat_percentages,vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats):
