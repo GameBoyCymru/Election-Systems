@@ -2,7 +2,7 @@ from flask import Flask, render_template
 import sqlite3
 import csv 
 import math
-
+import random
 
 app = Flask(__name__) 
 
@@ -80,7 +80,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS COUNTY_TABLE (
             region_id varchar(5) NOT NULL,
             country_id varchar(5) NOT NULL,
             FOREIGN KEY (region_id) REFERENCES REGION_TABLE(region_id),
-            FOREIGN KEY (country_id) REFERENCES REGION_TABLE(country_id)
+            FOREIGN KEY (country_id) REFERENCES COUNTRY_TABLE(country_id)
         )""")
 
 
@@ -927,7 +927,7 @@ def custom_by_criteria(criteria_name, criteria_id):
             while sum(party['seats'] for party in parties) < total_seats_for_criterion:
                 # For each party, calculate the quotient but make it so parties with lower votes have a higher quotient
                 for party in parties:
-                    party['quot'] = (party['votes'] / (2*party['seats'] + 1)) * -1
+                    party['quot'] = ((party['votes'] / (2*party['seats'] + 1)) * -1) + random.randint(-100,100)
 
 
                 # Allocate a seat to the party with the highest quotient
