@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
     <title>Results</title>
 </head>
 <body>
@@ -38,7 +39,7 @@
     <table>
         <thead>
             <tr>
-                <th>Name</th>
+                <th class="asc">Name</th>
                 <th>Votes</th>
                 <th>Seats</th>
                 <th>Vote Percentages</th>

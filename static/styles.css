@@ -194,3 +194,11 @@ td:nth-child(6) {
     width: 20%;
     max-width: 150px;
 }
+
+th.desc::after {
+    content: ' ▼';
+}
+
+th.asc::after {
+    content: ' ▲';
+}
