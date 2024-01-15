@@ -132,7 +132,10 @@ main {
 }
 
 .stats p {
+    display: flex;
     flex-grow: 1;
+    gap: 5px;
+    align-items: center;
     margin: 0;
 }
 
