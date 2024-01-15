@@ -118,7 +118,7 @@ def first_past_the_post():
         total_valid_votes = total_votes
 
 
-         # Insert the results into the database
+        # Insert the results into the database
         for party_name in sorted(vote_percentages.keys()):
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
@@ -770,6 +770,35 @@ def results(election_system_name):
     election_system_name = election_system_name.replace('_', ' ')   # Replace underscores with spaces
     results, total_votes, total_seats, most_seats = get_results_from_table(election_system_name)    # Get the results from the database
     return render_template('results.html', election_system_name=election_system_name, results=results, total_votes=total_votes, total_seats=total_seats, most_seats=most_seats)  # Render the results template with the results
+
+
+# Route for the party details page
+@app.route('/party_details/<party_name>')
+def party_details(party_name):
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+        party_name = party_name.replace('_', ' ')
+
+        cur.execute("""
+            SELECT c.name as candidate_name, g.gender_type, c.sitting, c.votes
+            FROM CANDIDATE_TABLE c
+            JOIN PARTY_TABLE p ON c.party_id = p.party_id
+            JOIN GENDER_TABLE g ON c.gender_id = g.gender_id
+            WHERE p.name = ?
+        """, (party_name,))
+
+        party_candidates = cur.fetchall()
+
+        # Calculate total votes for the party
+        total_votes = sum(candidate[3] for candidate in party_candidates)
+
+        return render_template('party_details.html',
+                               party_name=party_name,
+                               party_candidates=party_candidates,
+                               total_votes=total_votes)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True) # Run the Flask app in debug mode

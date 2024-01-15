@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <title>Party Details</title>
+</head>
+<body>
+<nav>
+    <h1>Party Details</h1>
+    <a href="{{ url_for('index') }}">
+        <button type="button" class="menu-button" id="return">Home</button>
+    </a>
+</nav>
+
+<section class="stats">
+    <h1>Party: {{ party_name }}</h1>
+    <h3>Total Votes for the Party: {{ total_votes }}</h3>
+</section>
+
+<section class="party-info">
+    <table>
+        <thead>
+        <tr>
+            <th>Candidate Name</th>
+            <th>Gender</th>
+            <th>Sitting</th>
+            <th>Votes</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        {% for candidate in party_candidates %}
+            <tr>
+                <td>{{ candidate[0] }}</td>   <!-- candidate name -->
+                <td>{{ candidate[1] }}</td>   <!-- gender_id -->
+                <td>{{ candidate[2] }}</td>   <!-- sitting -->
+                <td>{{ candidate[3] }}</td>   <!-- votes -->
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

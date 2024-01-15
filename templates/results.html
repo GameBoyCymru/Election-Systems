@@ -50,7 +50,7 @@
         </thead>
         <tbody>
             {% for result in results %}
-                <tr>
+                <tr onclick="window.location='{{ url_for('party_details', party_name=result[1].replace(' ', '_')) }}';">
                     <td>{{ result[1] }}</td>    <!-- Name -->
                     <td>{{ result[2] }}</td>    <!-- Votes -->
                     <td>{{ result[3] }}</td>    <!-- Seats -->
