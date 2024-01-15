@@ -106,8 +106,6 @@ main {
 
 .menu-button:hover {
     background-color: var(--secondary-color);
-    border-color: var(--primary-color);
-    color: var(--background-color);
     cursor: pointer;
 }
 
