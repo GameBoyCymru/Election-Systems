@@ -11,9 +11,10 @@ app = Flask(__name__)
 if os.path.exists('database.db'):
     os.remove('database.db')
 
+# Run the create_tables.py script to create the database and tables
 import create_tables
 
-
+# Function to insert results from each election system into the RESULTS_TABLE
 def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, seat_percentages,vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -22,6 +23,7 @@ def insert_into_results_table(election_system_name, name, votes, seats, vote_per
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats))
 
+#  Runs the first past the post election system and inserts the results into the database
 def first_past_the_post():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -129,7 +131,8 @@ def first_past_the_post():
         
         conn.commit()
 
-def calculate_results(election_system_name, disqualified_threshold=0):
+# Runs the simple proportional representation (with and without the threshold) election system and inserts the results into the database
+def simple_proportional_representation(election_system_name, disqualified_threshold=0):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
@@ -233,12 +236,7 @@ def calculate_results(election_system_name, disqualified_threshold=0):
 
         conn.commit()
 
-def simple_proportional_representation():
-    calculate_results("Proportional Representation (All Seats)")
-
-def proportional_representation_with_threshold():
-    calculate_results("Proportional Representation with 5% Threshold (All Seats)", disqualified_threshold=5)
-
+# Runs the proportional representation by criteria election system and inserts the results into the database
 def proportional_representation_by_criteria(criteria_name, criteria_id):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -318,6 +316,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+# Runs the largest remainder by criteria election system and inserts the results into the database
 def largest_remainder_by_criteria(criteria_name, criteria_id):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -412,6 +411,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+# Runs the d'hont by criteria election system and inserts the results into the database
 def dhont_by_criteria(criteria_name, criteria_id):
     with (sqlite3.connect('database.db') as conn):
         cur = conn.cursor()
@@ -513,6 +513,7 @@ def dhont_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+# Runs the webster by criteria election system and inserts the results into the database
 def webster_by_criteria(criteria_name, criteria_id):
     with (sqlite3.connect('database.db') as conn):
         cur = conn.cursor()
@@ -614,6 +615,7 @@ def webster_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+# Runs the custom by criteria election system and inserts the results into the database
 def custom_by_criteria(criteria_name, criteria_id):
     with (sqlite3.connect('database.db') as conn):
         cur = conn.cursor()
@@ -718,8 +720,8 @@ def custom_by_criteria(criteria_name, criteria_id):
 
 
 first_past_the_post()
-simple_proportional_representation()
-proportional_representation_with_threshold()
+simple_proportional_representation("Proportional Representation (All Seats)")
+simple_proportional_representation("Proportional Representation with 5% Threshold (All Seats)", disqualified_threshold=5)
 proportional_representation_by_criteria("County", "county_id")
 proportional_representation_by_criteria("Region", "region_id")
 proportional_representation_by_criteria("Country", "country_id")
@@ -737,13 +739,12 @@ custom_by_criteria("Region", "region_id")
 custom_by_criteria("Country", "country_id")
 
 
-# Route for the "index" page
+# Route for the main menu page
 @app.route('/')
 def index():
-
     return render_template('index.html')
 
-
+# Get the results from the database and return them to the results page
 def get_results_from_table(election_system_name):
     with sqlite3.connect('database.db') as conn:
         
@@ -765,14 +766,12 @@ def get_results_from_table(election_system_name):
     return rows, total_votes, total_seats, most_seats
 
 
-@app.route('/results/<election_system_name>')
+@app.route('/results/<election_system_name>')   # Route for the "results" page with the election system name as a parameter
 def results(election_system_name):
-    # Replace underscores with spaces
-    election_system_name = election_system_name.replace('_', ' ')
-    results, total_votes, total_seats, most_seats = get_results_from_table(election_system_name)
-    return render_template('results.html', election_system_name=election_system_name, results=results, total_votes=total_votes, total_seats=total_seats, most_seats=most_seats)
 
-
+    election_system_name = election_system_name.replace('_', ' ')   # Replace underscores with spaces
+    results, total_votes, total_seats, most_seats = get_results_from_table(election_system_name)    # Get the results from the database
+    return render_template('results.html', election_system_name=election_system_name, results=results, total_votes=total_votes, total_seats=total_seats, most_seats=most_seats)  # Render the results template with the results
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True) # Run the Flask app in debug mode
