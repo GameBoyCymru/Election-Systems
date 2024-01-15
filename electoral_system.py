@@ -105,11 +105,10 @@ def first_past_the_post():
             vote_seat_differences[party_name] = difference
         
         # Calculate the difference in seats from the winner's seats for each party
-        winner_seats = most_seats  # Assuming 'most_seats' is the number of seats the winner has
         seat_differences_from_winner = {}
         for party_name in seats_results.keys():
             party_seats = seats_results.get(party_name, 0)
-            difference = party_seats - winner_seats
+            difference = party_seats - most_seats
             seat_differences_from_winner[party_name] = difference
         
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
@@ -209,11 +208,10 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
             vote_seat_differences[party_name] = difference
 
         # Calculate the difference in seats from the winner's seats for each party
-        winner_seats = most_seats
         seat_differences_from_winner = {}
         for party_name in seats_results.keys():
             party_seats = seats_results.get(party_name, 0)
-            difference = party_seats - winner_seats
+            difference = party_seats - most_seats
             seat_differences_from_winner[party_name] = difference
 
         is_different_from_winner = 'No' if party_with_most_seats == 'Conservative' else 'Yes'
