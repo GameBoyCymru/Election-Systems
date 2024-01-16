@@ -823,13 +823,13 @@ def candidate_details(candidate_name):
         cur.execute("""
                 SELECT c.name as candidate_name, g.gender_type as gender, c.sitting, c.votes,
                        con.name as constituency_name, con.type as constituency_type,
-                       reg.name as region_name, co.name as county_name, cou.name as country_name
+                       co.name as county_name, reg.name as region_name, cou.name as country_name
                 FROM CANDIDATE_TABLE c
                 JOIN GENDER_TABLE g ON c.gender_id = g.gender_id
                 JOIN CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
-                JOIN COUNTY_TABLE co ON con.county_id = co.county_id
-                JOIN REGION_TABLE reg ON co.region_id = reg.region_id
-                JOIN COUNTRY_TABLE cou ON co.country_id = cou.country_id
+                JOIN COUNTY_TABLE co ON c.county_id = co.county_id
+                JOIN REGION_TABLE reg ON c.region_id = reg.region_id
+                JOIN COUNTRY_TABLE cou ON c.country_id = cou.country_id
                 WHERE c.name = ?
             """, (candidate_name,))
 

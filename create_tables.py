@@ -66,11 +66,7 @@ cur.execute("DROP TABLE IF EXISTS COUNTY_TABLE")
 # runs create table script
 cur.execute("""CREATE TABLE IF NOT EXISTS COUNTY_TABLE (
             county_id varchar(5) NOT NULL PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            region_id varchar(5) NOT NULL,
-            country_id varchar(5) NOT NULL,
-            FOREIGN KEY (region_id) REFERENCES REGION_TABLE(region_id),
-            FOREIGN KEY (country_id) REFERENCES COUNTRY_TABLE(country_id)
+            name VARCHAR(50) NOT NULL
         )""")
 
 # drops table CONSTITUENCY_TABLE if exists
@@ -79,21 +75,8 @@ cur.execute("DROP TABLE IF EXISTS CONSTITUENCY_TABLE")
 cur.execute("""CREATE TABLE IF NOT EXISTS CONSTITUENCY_TABLE (
             constituency_id varchar(5) NOT NULL PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
-            county_id varchar(5) NOT NULL,
-            type VARCHAR(8) NOT NULL,
-            FOREIGN KEY (county_id) REFERENCES COUNTY_TABLE(county_id)
-        )""")
-
-# drops table PARTYCONSTITUENCY_TABLE if exists
-cur.execute("DROP TABLE IF EXISTS PARTYCONSTITUENCY_TABLE")
-# runs create table script
-cur.execute("""CREATE TABLE IF NOT EXISTS PARTYCONSTITUENCY_TABLE (
-        party_id varchar(5) NOT NULL,
-        constituency_id varchar(5) NOT NULL,
-        PRIMARY KEY (party_id, constituency_id),
-        FOREIGN KEY (party_id) REFERENCES PARTY_TABLE(party_id),
-        FOREIGN KEY (constituency_id) REFERENCES CONSTITUENCY_TABLE(constituency_id)
-        )""")
+            type VARCHAR(8) NOT NULL
+            )""")
 
 # drops table RESULTS_TABLE if exists
 cur.execute("DROP TABLE IF EXISTS RESULTS_TABLE")
@@ -125,25 +108,24 @@ with open('data/party_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     party_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
 with open('data/constituency_data.csv', newline='', encoding='utf-8-sig') as csvfile:
-    constituency_data = [(int(row[0]), row[1], int(row[2]), row[3]) for row in csv.reader(csvfile)]
+    constituency_data = [(int(row[0]), row[1], row[2]) for row in csv.reader(csvfile)]
 
 with open('data/region_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     region_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
 with open('data/county_data.csv', newline='', encoding='utf-8-sig') as csvfile:
-    county_data = [(int(row[0]), row[1], int(row[2]), int(row[3])) for row in csv.reader(csvfile)]
+    county_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
 with open('data/country_data.csv', newline='', encoding='utf-8-sig') as csvfile:
     country_data = [(int(row[0]), row[1]) for row in csv.reader(csvfile)]
 
 cur.executemany("INSERT INTO GENDER_TABLE (gender_id, gender_type) VALUES (?,?);", gender_data)
-cur.executemany(
-    "INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id, county_id, region_id, country_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+cur.executemany("INSERT INTO CANDIDATE_TABLE (candidate_id, name, gender_id, sitting, votes, party_id, constituency_id, county_id, region_id, country_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     candidate_data)
 cur.executemany("INSERT INTO PARTY_TABLE (party_id, name) VALUES (?, ?)", party_data)
-cur.executemany("INSERT INTO CONSTITUENCY_TABLE (constituency_id, name, county_id, type) VALUES (?, ?, ?, ?)",
+cur.executemany("INSERT INTO CONSTITUENCY_TABLE (constituency_id, name, type) VALUES (?, ?, ?)",
                 constituency_data)
-cur.executemany("INSERT INTO COUNTY_TABLE (county_id, name, region_id, country_id) VALUES (?, ?, ?, ?)", county_data)
+cur.executemany("INSERT INTO COUNTY_TABLE (county_id, name) VALUES (?, ?)", county_data)
 cur.executemany("INSERT INTO REGION_TABLE (region_id, name) VALUES (?, ?)", region_data)
 cur.executemany("INSERT INTO COUNTRY_TABLE (country_id, name) VALUES (?, ?)", country_data)
 
