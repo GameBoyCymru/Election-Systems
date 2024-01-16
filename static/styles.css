@@ -54,7 +54,7 @@ a {
 
 nav {
     font-size: 1.6em;
-    margin: 10px auto;
+    margin: 20px auto 0 auto;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -62,7 +62,7 @@ nav {
     align-items: center;
     color: var(--text-color);
     width: 80%;
-    padding: 60px;
+    padding-bottom: 10px;
 }
 
 #main-nav {
@@ -100,8 +100,6 @@ main {
 
 #return {
        padding: 5px;
-
-
 }
 
 .menu-button:hover {
@@ -114,7 +112,7 @@ main {
     margin: 0 auto;
     display: flex;
     flex-direction: row-reverse;
-    align-items: stretch;
+    justify-content: center;
     gap: 5px;
 }
 
@@ -126,7 +124,6 @@ main {
     font-size: 1.2em;
     width: fit-content;
     text-align: center;
-    margin: 10px auto;
     padding: 20px;
     gap: 10px;
 }

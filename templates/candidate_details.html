@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <title>Candidate Details</title>
+</head>
+<body>
+<nav>
+    <h1>Candidate Details</h1>
+    <a href="{{ url_for('index') }}">
+        <button type="button" class="menu-button" id="return">Home</button>
+    </a>
+</nav>
+<section class="info">
+    <section class="stats">
+        <h1>Candidate: {{ candidate_details[0] }}</h1>
+        <h3>Gender: {{ candidate_details[1] }}</h3>
+        <h3>Votes: {{ candidate_details[3] }}</h3>
+    </section>
+</section>
+
+<section class="party-info">
+    <table>
+        <thead>
+        <tr>
+            <th>Constituency Name</th>
+            <th>Constituency Type</th>
+            <th>County Name</th>
+            <th>Region Name</th>
+            <th>Country Name</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>{{ candidate_details[4] }}</td>   <!-- constituency_name -->
+            <td>{{ candidate_details[5] }}</td>   <!-- constituency_type -->
+            <td>{{ candidate_details[7] }}</td>   <!-- county_name -->
+            <td>{{ candidate_details[6] }}</td>   <!-- region_name -->
+            <td>{{ candidate_details[8] }}</td>   <!-- country_name -->
+
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>
+
+</body>
+</html>

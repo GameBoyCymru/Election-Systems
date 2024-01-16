@@ -781,10 +781,11 @@ def party_details(party_name):
         party_name = party_name.replace('_', ' ')
 
         cur.execute("""
-            SELECT c.name as candidate_name, g.gender_type, c.sitting, c.votes
+            SELECT c.name as candidate_name, g.gender_type, c.sitting, c.votes, con.name as constituency_name
             FROM CANDIDATE_TABLE c
             JOIN PARTY_TABLE p ON c.party_id = p.party_id
             JOIN GENDER_TABLE g ON c.gender_id = g.gender_id
+            JOIN CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
             WHERE p.name = ?
         """, (party_name,))
 
@@ -798,6 +799,31 @@ def party_details(party_name):
                                party_candidates=party_candidates,
                                total_votes=total_votes)
 
+
+@app.route('/candidate_details/<candidate_name>')
+def candidate_details(candidate_name):
+    with sqlite3.connect('database.db') as conn:
+        cur = conn.cursor()
+
+        candidate_name = candidate_name.replace('_', ' ')
+
+        # Retrieve candidate details from the database
+        cur.execute("""
+                SELECT c.name as candidate_name, g.gender_type as gender, c.sitting, c.votes,
+                       con.name as constituency_name, con.type as constituency_type,
+                       reg.name as region_name, co.name as county_name, cou.name as country_name
+                FROM CANDIDATE_TABLE c
+                JOIN GENDER_TABLE g ON c.gender_id = g.gender_id
+                JOIN CONSTITUENCY_TABLE con ON c.constituency_id = con.constituency_id
+                JOIN COUNTY_TABLE co ON con.county_id = co.county_id
+                JOIN REGION_TABLE reg ON co.region_id = reg.region_id
+                JOIN COUNTRY_TABLE cou ON co.country_id = cou.country_id
+                WHERE c.name = ?
+            """, (candidate_name,))
+
+        candidate_details = cur.fetchone()
+
+    return render_template('candidate_details.html', candidate_details=candidate_details)
 
 
 if __name__ == '__main__':

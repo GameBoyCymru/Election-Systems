@@ -16,10 +16,12 @@
     </a>
 </nav>
 
-<section class="stats">
-    <h1>Party: {{ party_name }}</h1>
-    <h3>Total Votes for the Party: {{ total_votes }}</h3>
-</section>
+<section class="info">
+    <section class="stats">
+        <h1>Party: {{ party_name }}</h1>
+        <h3>Total Votes for the Party: {{ total_votes }}</h3>
+    </section>
+</section
 
 <section class="party-info">
     <table>
@@ -29,16 +31,18 @@
             <th>Gender</th>
             <th>Sitting</th>
             <th>Votes</th>
+            <th>Constituency</th>
         </tr>
         </thead>
         <tbody>
 
         {% for candidate in party_candidates %}
-            <tr>
+            <tr onclick="window.location='{{ url_for('candidate_details', candidate_name=candidate[0].replace(' ', '_')) }}';">
                 <td>{{ candidate[0] }}</td>   <!-- candidate name -->
                 <td>{{ candidate[1] }}</td>   <!-- gender_id -->
                 <td>{{ candidate[2] }}</td>   <!-- sitting -->
                 <td>{{ candidate[3] }}</td>   <!-- votes -->
+                <td>{{ candidate[4] }}</td>   <!-- constituency -->
             </tr>
         {% endfor %}
 
