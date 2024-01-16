@@ -7,12 +7,13 @@ import os
 app = Flask(__name__) 
 
 
-# delete the database if it exists
-if os.path.exists('database.db'):
-    os.remove('database.db')
 
-# Run the create_tables.py script to create the database and tables
-import create_tables
+
+# check if the database exists. If it does not, run the create_tables script to create the database
+if not os.path.exists('database.db'):
+    import create_tables
+
+
 
 acutal_election_winner = "Conservative"     # The actual winner of the election
 
@@ -716,25 +717,36 @@ def custom_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+def do_maths():
+    first_past_the_post()
+    simple_proportional_representation("Proportional Representation (All Seats)")
+    simple_proportional_representation("Proportional Representation with 5% Threshold (All Seats)", disqualified_threshold=5)
+    proportional_representation_by_criteria("County", "county_id")
+    proportional_representation_by_criteria("Region", "region_id")
+    proportional_representation_by_criteria("Country", "country_id")
+    largest_remainder_by_criteria("County", "county_id")
+    largest_remainder_by_criteria("Region", "region_id")
+    largest_remainder_by_criteria("Country", "country_id")
+    dhont_by_criteria("County", "county_id")
+    dhont_by_criteria("Region", "region_id")
+    dhont_by_criteria("Country", "country_id")
+    webster_by_criteria("County", "county_id")
+    webster_by_criteria("Region", "region_id")
+    webster_by_criteria("Country", "country_id")
+    custom_by_criteria("County", "county_id")
+    custom_by_criteria("Region", "region_id")
+    custom_by_criteria("Country", "country_id")
 
-first_past_the_post()
-simple_proportional_representation("Proportional Representation (All Seats)")
-simple_proportional_representation("Proportional Representation with 5% Threshold (All Seats)", disqualified_threshold=5)
-proportional_representation_by_criteria("County", "county_id")
-proportional_representation_by_criteria("Region", "region_id")
-proportional_representation_by_criteria("Country", "country_id")
-largest_remainder_by_criteria("County", "county_id")
-largest_remainder_by_criteria("Region", "region_id")
-largest_remainder_by_criteria("Country", "country_id")
-dhont_by_criteria("County", "county_id")
-dhont_by_criteria("Region", "region_id")
-dhont_by_criteria("Country", "country_id")
-webster_by_criteria("County", "county_id")
-webster_by_criteria("Region", "region_id")
-webster_by_criteria("Country", "country_id")
-custom_by_criteria("County", "county_id")
-custom_by_criteria("Region", "region_id")
-custom_by_criteria("Country", "country_id")
+
+
+# check if the results table exists with data. If it does not, run the do_maths function to calculate the results
+with sqlite3.connect('database.db') as conn:
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM RESULTS_TABLE")
+    results = cur.fetchall()
+    if not results:
+        do_maths()
+
 
 
 # Route for the main menu page
