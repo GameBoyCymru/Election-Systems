@@ -15,7 +15,7 @@ if not os.path.exists('database.db'):
 
 
 
-acutal_election_winner = "Conservative"     # The actual winner of the election
+actual_election_winner = "Conservative"     # The actual winner of the election
 
 # Function to insert results from each election system into the RESULTS_TABLE
 def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, seat_percentages,vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats):
@@ -114,7 +114,7 @@ def first_past_the_post():
             difference = party_seats - most_seats
             seat_differences_from_winner[party_name] = difference
         
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
         election_system_name = "First Past the Post"
         total_valid_votes = total_votes
 
@@ -217,7 +217,7 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
             difference = party_seats - most_seats
             seat_differences_from_winner[party_name] = difference
 
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
         total_valid_votes = total_votes - disqualified_votes
 
         # Insert the results into the database
@@ -294,7 +294,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
         election_system_name = f"Proportional Representation by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results_by_criteria if row[0] == party_name])
@@ -389,7 +389,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
         election_system_name = f"Largest Remainder by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results_by_criteria if row[0] == party_name])
@@ -491,7 +491,7 @@ def dhont_by_criteria(criteria_name, criteria_id):
         election_system_name = f"D'Hont by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results if row[0] == party_name])
@@ -593,7 +593,7 @@ def webster_by_criteria(criteria_name, criteria_id):
         election_system_name = f"Webster by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results if row[0] == party_name])
@@ -696,7 +696,7 @@ def custom_by_criteria(criteria_name, criteria_id):
         election_system_name = f"Custom by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
-        is_different_from_winner = 'No' if party_with_most_seats == acutal_election_winner else 'Yes'
+        is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
 
         for party_name, seats in party_total_seats.items():
             votes = sum([row[2] for row in party_results if row[0] == party_name])
