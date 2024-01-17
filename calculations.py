@@ -180,7 +180,7 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
         # Then, calculate the seat count for the remaining parties
         for party_name, total_votes_party in party_results:
             if party_name not in disqualified_parties:
-                seat_count = math.floor((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
+                seat_count = round((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
                 seats_results[party_name] = seat_count
 
         # Add parties without seats to the seats_results with default value 0
