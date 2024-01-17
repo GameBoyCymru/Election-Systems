@@ -166,7 +166,7 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
         disqualified_votes = 0
         disqualified_parties = []
 
-        # First, disqualify parties with less than the specified threshold
+        # Disqualify parties with less than the specified threshold
         for party_name, total_votes_party in party_results[:]:
             vote_percentage = (total_votes_party / total_votes) * 100
 
@@ -177,7 +177,7 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
                 vote_percentages[party_name] = 0.00
                 party_results.remove((party_name, total_votes_party))
 
-        # Then, calculate the seat count for the remaining parties
+        # Calculate the seat count for the remaining parties
         for party_name, total_votes_party in party_results:
             if party_name not in disqualified_parties:
                 seat_count = round((total_votes_party / (total_votes - disqualified_votes)) * total_seats)
@@ -264,7 +264,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
         # Initialize a dictionary to store the total seats for each party
         party_total_seats = {}
 
-        # Iterate over each criterion
+        # Iterate over each criterion (county, region or country)
         for criterion_value in set(row[1] for row in party_results_by_criteria):
             # Calculate the total seats based on the number of constituencies for the current criterion
             cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
@@ -280,7 +280,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
                 # Calculate the proportion of seats for the party in the criterion
                 proportion_in_criterion = party_total_votes / criterion_total_votes
 
-                # Calculate the seats for the party in the criterion (rounded to the nearest integer)
+                # Calculate the seats for the party in the criterion
                 seats_in_criterion = proportion_in_criterion * criterion_total_seats
 
                 # Update the total seats for the party
@@ -446,8 +446,6 @@ def dhont_by_criteria(criteria_name, criteria_id):
             cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
             total_seats_for_criterion = cur.fetchone()[0]
 
-            # Get the name of the criterion (e.g., county_name, region_name, country_name)
-            criterion_name = criterion_value  # Assuming criterion_value itself is the name
 
             # Initialize a list of parties, each with their total votes and zero seats
             parties = [{'name': party_name, 'votes': sum(row[2] for row in party_results if row[0] == party_name and row[1] == criterion_value), 'seats': 0} for party_name in set(row[0] for row in party_results if row[1] == criterion_value)]
@@ -465,22 +463,6 @@ def dhont_by_criteria(criteria_name, criteria_id):
             # Update the total seats for each party
             for party in parties:
                 party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
-
-
-        # Initialize a variable to store the total seats across all criteria
-        all_seats = 0
-
-        # Iterate over each unique criterion
-        for criterion_value in set(row[1] for row in party_results):
-            # Fetch the total seats for the criterion from the database
-            cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
-            total_seats_for_criterion = cur.fetchone()[0]
-
-            # Add the total seats for the criterion to the total seats across all criteria
-            all_seats += total_seats_for_criterion
-
-        # Sum all seats awarded
-        allocated_seats =  sum(party_total_seats.values())
 
 
         # Calculate total votes and total seats for the entire election
@@ -548,9 +530,6 @@ def webster_by_criteria(criteria_name, criteria_id):
             cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
             total_seats_for_criterion = cur.fetchone()[0]
 
-            # Get the name of the criterion (e.g., county_name, region_name, country_name)
-            criterion_name = criterion_value  # Assuming criterion_value itself is the name
-
             # Initialize a list of parties, each with their total votes and zero seats
             parties = [{'name': party_name, 'votes': sum(row[2] for row in party_results if row[0] == party_name and row[1] == criterion_value), 'seats': 0} for party_name in set(row[0] for row in party_results if row[1] == criterion_value)]
 
@@ -567,22 +546,6 @@ def webster_by_criteria(criteria_name, criteria_id):
             # Update the total seats for each party
             for party in parties:
                 party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
-
-
-        # Initialize a variable to store the total seats across all criteria
-        all_seats = 0
-
-        # Iterate over each unique criterion
-        for criterion_value in set(row[1] for row in party_results):
-            # Fetch the total seats for the criterion from the database
-            cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
-            total_seats_for_criterion = cur.fetchone()[0]
-
-            # Add the total seats for the criterion to the total seats across all criteria
-            all_seats += total_seats_for_criterion
-
-        # Sum all seats awarded
-        allocated_seats =  sum(party_total_seats.values())
 
 
         # Calculate total votes and total seats for the entire election
@@ -650,15 +613,12 @@ def custom_by_criteria(criteria_name, criteria_id):
             cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
             total_seats_for_criterion = cur.fetchone()[0]
 
-            # Get the name of the criterion (e.g., county_name, region_name, country_name)
-            criterion_name = criterion_value  # Assuming criterion_value itself is the name
-
             # Initialize a list of parties, each with their total votes and zero seats
             parties = [{'name': party_name, 'votes': sum(row[2] for row in party_results if row[0] == party_name and row[1] == criterion_value), 'seats': 0} for party_name in set(row[0] for row in party_results if row[1] == criterion_value)]
 
             # Repeat until all seats are allocated
             while sum(party['seats'] for party in parties) < total_seats_for_criterion:
-                # For each party, calculate the quotient but make it so parties with lower votes have a higher quotient
+                # For each party, calculate the quotient
                 for party in parties:
                     party['quot'] = ((party['votes'] / (2*party['seats'] + 1)) * -1) + random.randint(-100,100)
 
@@ -670,22 +630,6 @@ def custom_by_criteria(criteria_name, criteria_id):
             # Update the total seats for each party
             for party in parties:
                 party_total_seats[party['name']] = party_total_seats.get(party['name'], 0) + party['seats']
-
-
-        # Initialize a variable to store the total seats across all criteria
-        all_seats = 0
-
-        # Iterate over each unique criterion
-        for criterion_value in set(row[1] for row in party_results):
-            # Fetch the total seats for the criterion from the database
-            cur.execute(f"SELECT COUNT(DISTINCT constituency_id) FROM CANDIDATE_TABLE WHERE {criteria_id} = ?", (criterion_value,))
-            total_seats_for_criterion = cur.fetchone()[0]
-
-            # Add the total seats for the criterion to the total seats across all criteria
-            all_seats += total_seats_for_criterion
-
-        # Sum all seats awarded
-        allocated_seats =  sum(party_total_seats.values())
 
 
         # Calculate total votes and total seats for the entire election
