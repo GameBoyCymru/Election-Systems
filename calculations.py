@@ -17,7 +17,7 @@ if not os.path.exists('database.db'):
 
 actual_election_winner = "Conservative"     # The actual winner of the election
 
-# Function to insert results from each election system into the RESULTS_TABLE
+# Function to insert results from each election system into the results table
 def insert_into_results_table(election_system_name, name, votes, seats, vote_percentages, seat_percentages,vote_seat_differences, seat_differences_from_winner, is_different_from_winner, total_valid_votes, party_with_most_seats):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -89,11 +89,11 @@ def first_past_the_post():
         """)
         seats_results = dict(cur.fetchall())
         
-        # Add parties without seats to the seats_results with default value 0
+        # Add parties without seats to the seats results with default value 0
         for party_name, _ in party_results:
             seats_results.setdefault(party_name, 0)
             
-        # Sort the seats_results dictionary by seats in descending order
+        # Sort the dictionary by seats in descending order
         sorted_seats = sorted(seats_results.items(), key=lambda x: x[1], reverse=True)
         
         # Extract the party with the most seats
@@ -119,7 +119,7 @@ def first_past_the_post():
         total_valid_votes = total_votes
 
 
-        # Insert the results into the database
+        # Insert the results into the results table
         for party_name in sorted(vote_percentages.keys()):
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
@@ -132,12 +132,12 @@ def first_past_the_post():
         
         conn.commit()
 
-# Runs the simple proportional representation (with and without the threshold) election system and inserts the results into the database
+# Runs the simple proportional representation (with and without the threshold) election system and inserts the results into the results table
 def simple_proportional_representation(election_system_name, disqualified_threshold=0):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
-        # Calculate and display the total amount of votes
+        # Calculate the total amount of votes
         cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
         total_votes = cur.fetchone()[0]
 
@@ -159,12 +159,13 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
         """)
         party_results = cur.fetchall()
 
-        # Calculate the number of seats each party has won based on the percentage of votes
-        seats_results = {}
-        vote_percentages = {}
 
-        disqualified_votes = 0
-        disqualified_parties = []
+        seats_results = {}  # Initialize a dictionary to store the total seats for each party
+        vote_percentages = {}   # Initialize a dictionary to store the percentage of votes for each party
+
+        disqualified_votes = 0  # Initialize a variable to store the total votes for disqualified parties
+        disqualified_parties = []   # Initialize a list to store the parties that have been disqualified
+
 
         # Disqualify parties with less than the specified threshold
         for party_name, total_votes_party in party_results[:]:
@@ -220,7 +221,7 @@ def simple_proportional_representation(election_system_name, disqualified_thresh
         is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
         total_valid_votes = total_votes - disqualified_votes
 
-        # Insert the results into the database
+        # Insert the results into the results table
         for party_name in sorted(seats_results.keys()):
             votes = dict(party_results).get(party_name, 0)
             seats = seats_results.get(party_name, 0)
@@ -286,11 +287,11 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
                 # Update the total seats for the party
                 party_total_seats[party_name] = round(party_total_seats.get(party_name, 0) + seats_in_criterion)
 
-        # Calculate total votes and total seats for the entire election
+        # Calculate total votes and total seats for the entire election system
         total_votes = sum([row[2] for row in party_results_by_criteria])
         total_seats = sum(party_total_seats.values())
 
-        # Insert the results into the database
+        # Sets the election system name, total valid votes, party with most seats and whether the winning party is different from the actual winner
         election_system_name = f"Proportional Representation by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
@@ -303,7 +304,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
             vote_seat_difference = round(vote_percentage - seat_percentage, 2)
             seat_difference_from_winner = seats - max(party_total_seats.values())
 
-            # Insert into the RESULTS_TABLE
+            # Insert into the results table
             cur.execute("""
                 INSERT INTO RESULTS_TABLE
                 (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
@@ -315,7 +316,7 @@ def proportional_representation_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
-# Runs the largest remainder by criteria election system and inserts the results into the database
+# Runs the largest remainder by criteria election system and inserts the results into the results table
 def largest_remainder_by_criteria(criteria_name, criteria_id):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -369,7 +370,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
                 # Add the seats awarded to the total seats awarded
                 seats_awarded += math.floor(party_total_votes / hare_quota)
 
-            # Sort the party_total_seats dictionary by seats in descending order
+            # Sort the dictionary by seats in descending order
             sorted_seats = sorted(party_total_seats.items(), key=lambda x: x[1], reverse=True)
 
             while seats_awarded < criterion_total_seats:
@@ -385,7 +386,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
         total_votes = sum([row[2] for row in party_results_by_criteria])
         total_seats = sum(party_total_seats.values())
 
-        # Insert the results into the database
+        # Sets the election system name, total valid votes, party with most seats and whether the winning party is different from the actual winner
         election_system_name = f"Largest Remainder by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
@@ -398,7 +399,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
             vote_seat_difference = round(vote_percentage - seat_percentage, 2)
             seat_difference_from_winner = seats - max(party_total_seats.values())
 
-            # Insert into the RESULTS_TABLE
+            # Insert into the results table
             cur.execute("""
                 INSERT INTO RESULTS_TABLE
                 (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
@@ -410,7 +411,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
-# Runs the d'hont by criteria election system and inserts the results into the database
+# Runs the d'hondt by criteria election system and inserts the results into the database
 def dhondt_by_criteria(criteria_name, criteria_id):
     with (sqlite3.connect('database.db') as conn):
         cur = conn.cursor()
@@ -469,7 +470,7 @@ def dhondt_by_criteria(criteria_name, criteria_id):
         total_votes = sum([row[2] for row in party_results])
         total_seats = sum(party_total_seats.values())
 
-        # Insert the results into the database
+        # Sets the election system name, total valid votes, party with most seats and whether the winning party is different from the actual winner
         election_system_name = f"D'Hondt by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
@@ -482,7 +483,7 @@ def dhondt_by_criteria(criteria_name, criteria_id):
             vote_seat_difference = round(vote_percentage - seat_percentage, 2)
             seat_difference_from_winner = seats - max(party_total_seats.values())
 
-            # Insert into the RESULTS_TABLE
+            # Insert into the results table
             cur.execute("""
                 INSERT INTO RESULTS_TABLE
                 (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
@@ -552,7 +553,7 @@ def webster_by_criteria(criteria_name, criteria_id):
         total_votes = sum([row[2] for row in party_results])
         total_seats = sum(party_total_seats.values())
 
-        # Insert the results into the database
+        # Sets the election system name, total valid votes, party with most seats and whether the winning party is different from the actual winner
         election_system_name = f"Webster by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
@@ -636,7 +637,7 @@ def custom_by_criteria(criteria_name, criteria_id):
         total_votes = sum([row[2] for row in party_results])
         total_seats = sum(party_total_seats.values())
 
-        # Insert the results into the database
+        # Sets the election system name, total valid votes, party with most seats and whether the winning party is different from the actual winner
         election_system_name = f"Custom by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
@@ -649,7 +650,7 @@ def custom_by_criteria(criteria_name, criteria_id):
             vote_seat_difference = round(vote_percentage - seat_percentage, 2)
             seat_difference_from_winner = seats - max(party_total_seats.values())
 
-            # Insert into the RESULTS_TABLE
+            # Insert into the results table
             cur.execute("""
                 INSERT INTO RESULTS_TABLE
                 (election_system_name, name, votes, seats, vote_percentages, seat_percentages, vote_seat_differences,
@@ -661,6 +662,7 @@ def custom_by_criteria(criteria_name, criteria_id):
 
         conn.commit()
 
+# Runs all the election systems
 def do_maths():
     first_past_the_post()
     simple_proportional_representation("Proportional Representation (All Seats)")
@@ -706,7 +708,7 @@ def get_results_from_table(election_system_name):
         cur.execute("SELECT * FROM RESULTS_TABLE WHERE election_system_name = ? ORDER BY name ASC", (election_system_name,))
         rows = cur.fetchall()
 
-        
+        # Calculate the total number of votes
         cur.execute("SELECT SUM(votes) FROM CANDIDATE_TABLE")
         total_votes = cur.fetchone()[0]
         
@@ -723,9 +725,9 @@ def get_results_from_table(election_system_name):
 @app.route('/results/<election_system_name>')   # Route for the "results" page with the election system name as a parameter
 def results(election_system_name):
 
-    election_system_name = election_system_name.replace('_', ' ')   # Replace underscores with spaces
-    results, total_votes, total_seats, most_seats = get_results_from_table(election_system_name)    # Get the results from the database
-    return render_template('results.html', election_system_name=election_system_name, results=results, total_votes=total_votes, total_seats=total_seats, most_seats=most_seats)  # Render the results template with the results
+    election_system_name = election_system_name.replace('_', ' ')   # Replaces underscores with spaces
+    results, total_votes, total_seats, most_seats = get_results_from_table(election_system_name)    # Get the results from the database using the get_results_from_table function
+    return render_template('results.html', election_system_name=election_system_name, results=results, total_votes=total_votes, total_seats=total_seats, most_seats=most_seats)
 
 
 # Route for the party details page
@@ -734,8 +736,10 @@ def party_details(party_name):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
+        # Replace underscores with spaces in the party name
         party_name = party_name.replace('_', ' ')
 
+        # Retrieve the party candidates from the database
         cur.execute("""
             SELECT c.name as candidate_name, g.gender_type, c.sitting, c.votes, con.name as constituency_name
             FROM CANDIDATE_TABLE c
@@ -756,14 +760,16 @@ def party_details(party_name):
                                total_votes=total_votes)
 
 
+# Route for the candidate details page
 @app.route('/candidate_details/<candidate_name>')
 def candidate_details(candidate_name):
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
 
+        # Replace underscores with spaces in the candidate name
         candidate_name = candidate_name.replace('_', ' ')
 
-        # Retrieve candidate details from the database
+        # Retrieve candidate and location details from the database
         cur.execute("""
                 SELECT c.name as candidate_name, g.gender_type as gender, c.sitting, c.votes,
                        con.name as constituency_name, con.type as constituency_type,
