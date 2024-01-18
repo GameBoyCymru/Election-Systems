@@ -411,7 +411,7 @@ def largest_remainder_by_criteria(criteria_name, criteria_id):
         conn.commit()
 
 # Runs the d'hont by criteria election system and inserts the results into the database
-def dhont_by_criteria(criteria_name, criteria_id):
+def dhondt_by_criteria(criteria_name, criteria_id):
     with (sqlite3.connect('database.db') as conn):
         cur = conn.cursor()
 
@@ -470,7 +470,7 @@ def dhont_by_criteria(criteria_name, criteria_id):
         total_seats = sum(party_total_seats.values())
 
         # Insert the results into the database
-        election_system_name = f"D'Hont by {criteria_name}"
+        election_system_name = f"D'Hondt by {criteria_name}"
         total_valid_votes = total_votes
         party_with_most_seats = max(party_total_seats, key=party_total_seats.get)
         is_different_from_winner = 'No' if party_with_most_seats == actual_election_winner else 'Yes'
@@ -671,9 +671,9 @@ def do_maths():
     largest_remainder_by_criteria("County", "county_id")
     largest_remainder_by_criteria("Region", "region_id")
     largest_remainder_by_criteria("Country", "country_id")
-    dhont_by_criteria("County", "county_id")
-    dhont_by_criteria("Region", "region_id")
-    dhont_by_criteria("Country", "country_id")
+    dhondt_by_criteria("County", "county_id")
+    dhondt_by_criteria("Region", "region_id")
+    dhondt_by_criteria("Country", "country_id")
     webster_by_criteria("County", "county_id")
     webster_by_criteria("Region", "region_id")
     webster_by_criteria("Country", "country_id")
