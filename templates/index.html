@@ -5,36 +5,73 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">   <!-- Link to the stylesheet -->
     <title>Main Menu</title>
 </head>
 
 <body>
-    <nav id="main-nav">
-        <h1>UK General Election 2019 Data</h1>
-    </nav>
-    <main>
-        <section class="menu-section">
-            <a href="{{ url_for('results', election_system_name='First_Past_the_Post') }}"><button type="button" class="menu-button">First past the post by Constituency</button></a>
-            <a href="{{ url_for('results', election_system_name='Proportional_Representation_(All_Seats)') }}"><button type="button" class="menu-button">Proportional Representation (All Seats)</button></a>
-            <a href="{{ url_for('results', election_system_name='Proportional_Representation_with_5%_Threshold_(All_Seats)') }}"><button type="button" class="menu-button">Proportional Representation with 5% Threshold (All Seats) </button></a>
-            <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_County') }}"><button type="button" class="menu-button">Proportional Representation by County</button></a>
-            <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_Region') }}"><button type="button" class="menu-button">Proportional Representation by Region</button></a>
-            <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_Country') }}"><button type="button" class="menu-button">Proportional Representation by Country</button></a>
-            <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_County') }}"><button type="button" class="menu-button">Largest Remainder by County</button></a>
-            <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_Region') }}"><button type="button" class="menu-button">Largest Remainder by Region</button></a>
-            <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_Country') }}"><button type="button" class="menu-button">Largest Remainder by Country</button></a>
-            <a href="{{ url_for('results', election_system_name="D'Hondt_by_County") }}"><button type="button" class="menu-button">D'Hondt by County</button></a>
-            <a href="{{ url_for('results', election_system_name="D'Hondt_by_Region") }}"><button type="button" class="menu-button">D'Hondt by Region</button></a>
-            <a href="{{ url_for('results', election_system_name="D'Hondt_by_Country") }}"><button type="button" class="menu-button">D'Hondt by Country</button></a>
-            <a href="{{ url_for('results', election_system_name="Webster_by_County") }}"><button type="button" class="menu-button">Webster by County</button></a>
-            <a href="{{ url_for('results', election_system_name="Webster_by_Region") }}"><button type="button" class="menu-button">Webster by Region</button></a>
-            <a href="{{ url_for('results', election_system_name="Webster_by_Country") }}"><button type="button" class="menu-button">Webster by Country</button></a>
-            <a href="{{ url_for('results', election_system_name="Custom_by_County") }}"><button type="button" class="menu-button">Custom by County</button></a>
-            <a href="{{ url_for('results', election_system_name="Custom_by_Region") }}"><button type="button" class="menu-button">Custom by Region</button></a>
-            <a href="{{ url_for('results', election_system_name="Custom_by_Country") }}"><button type="button" class="menu-button">Custom by Country</button></a>
-        </section>
-    </main>
+<nav id="main-nav">
+    <h1>UK General Election 2019 Data</h1>
+</nav>
+<main>
+    <!-- Section contains all the navigation buttons for each system-->
+    <section class="menu-section">
+        <a href="{{ url_for('results', election_system_name='First_Past_the_Post') }}">
+            <button type="button" class="menu-button">First past the post by Constituency</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Proportional_Representation_(All_Seats)') }}">
+            <button type="button" class="menu-button">Proportional Representation (All Seats)</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Proportional_Representation_with_5%_Threshold_(All_Seats)') }}">
+            <button type="button" class="menu-button">Proportional Representation with 5% Threshold (All Seats)</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_County') }}">
+            <button type="button" class="menu-button">Proportional Representation by County</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_Region') }}">
+            <button type="button" class="menu-button">Proportional Representation by Region</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Proportional_Representation_by_Country') }}">
+            <button type="button" class="menu-button">Proportional Representation by Country</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_County') }}">
+            <button type="button" class="menu-button">Largest Remainder by County</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_Region') }}">
+            <button type="button" class="menu-button">Largest Remainder by Region</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name='Largest_Remainder_by_Country') }}">
+            <button type="button" class="menu-button">Largest Remainder by Country</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="D'Hondt_by_County") }}">
+            <button type="button" class="menu-button">D'Hondt by County</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="D'Hondt_by_Region") }}">
+            <button type="button" class="menu-button">D'Hondt by Region</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="D'Hondt_by_Country") }}">
+            <button type="button" class="menu-button">D'Hondt by Country</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Webster_by_County") }}">
+            <button type="button" class="menu-button">Webster by County</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Webster_by_Region") }}">
+            <button type="button" class="menu-button">Webster by Region</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Webster_by_Country") }}">
+            <button type="button" class="menu-button">Webster by Country</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Custom_by_County") }}">
+            <button type="button" class="menu-button">Custom by County</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Custom_by_Region") }}">
+            <button type="button" class="menu-button">Custom by Region</button>
+        </a>
+        <a href="{{ url_for('results', election_system_name="Custom_by_Country") }}">
+            <button type="button" class="menu-button">Custom by Country</button>
+        </a>
+    </section>
+</main>
 </body>
 
 </html>

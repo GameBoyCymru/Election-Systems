@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,12 +9,14 @@
     <title>Results</title>
 </head>
 <body>
-    <nav>
-        <h1>System: <br>{{ election_system_name }}</h1>
-        <a href="{{ url_for('index') }}"><button type="button" class="menu-button" id="return">Return</button></a>
-    </nav>
+<nav>
+    <h1>System: <br>{{ election_system_name }}</h1>
+    <a href="{{ url_for('index') }}">
+        <button type="button" class="menu-button" id="return">Return</button>
+    </a>
+</nav>
 
-    {% if results %}
+{% if results %}
     <section class="info">
         <section class="stats">
             <p>Total Votes: {{ total_votes }}</p>
@@ -34,33 +36,33 @@
             {% endif %}
         </section>
     </section>
-    {% endif %}
+{% endif %}
 
-    <table>
-        <thead>
-            <tr>
-                <th class="asc">Name</th>
-                <th>Votes</th>
-                <th>Seats</th>
-                <th>Vote Percentages</th>
-                <th>Seat Percentages</th>
-                <th>Vote Seat Differences</th>
-                <th>Seat Differences From Winner</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for result in results %}
-                <tr onclick="window.location='{{ url_for('party_details', party_name=result[1].replace(' ', '_')) }}';">
-                    <td>{{ result[1] }}</td>    <!-- Name -->
-                    <td>{{ result[2] }}</td>    <!-- Votes -->
-                    <td>{{ result[3] }}</td>    <!-- Seats -->
-                    <td>{{ '%.2f'|format(result[4]) }}%</td>    <!-- Vote Percentages -->
-                    <td>{{ '%.2f'|format(result[5]) }}%</td>    <!-- Seat Percentages -->
-                    <td>{{ '%.2f'|format(result[6]) }}%</td>    <!-- Vote Seat Differences -->
-                    <td>{{ result[7] }}</td>    <!-- Seat Differences From Winner -->
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<table>
+    <thead>
+    <tr>
+        <th class="asc">Name</th>
+        <th>Votes</th>
+        <th>Seats</th>
+        <th>Vote Percentages</th>
+        <th>Seat Percentages</th>
+        <th>Vote Seat Differences</th>
+        <th>Seat Differences From Winner</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for result in results %}
+        <tr onclick="window.location='{{ url_for('party_details', party_name=result[1].replace(' ', '_')) }}';">
+            <td>{{ result[1] }}</td>    <!-- Name -->
+            <td>{{ result[2] }}</td>    <!-- Votes -->
+            <td>{{ result[3] }}</td>    <!-- Seats -->
+            <td>{{ '%.2f'|format(result[4]) }}%</td>    <!-- Vote Percentages -->
+            <td>{{ '%.2f'|format(result[5]) }}%</td>    <!-- Seat Percentages -->
+            <td>{{ '%.2f'|format(result[6]) }}%</td>    <!-- Vote Seat Differences -->
+            <td>{{ result[7] }}</td>    <!-- Seat Differences From Winner -->
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
 </body>
 </html>
